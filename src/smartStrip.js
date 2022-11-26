@@ -42,7 +42,6 @@ class SmartStrip extends Device {
         },
       },
     }
-    this.manufacter = manufacter
     this.nr_of_plugs = nr_of_plugs
     this.cmnd_power_topics = []
     this.stat_power_topics = []

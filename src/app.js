@@ -4,17 +4,20 @@ const bodyParser = require('body-parser')
 const express = require('express')
 const SmartStrip = require('./smartStrip.js')
 const SmartSwitch = require('./smartSwitch.js')
+const SmartIR = require('./smartIR.js')
 const app = express()
-const host = 'broker.hivemq.com'
+const host = '192.168.0.108'
 const port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const conectURL = `mqtt://${host}:${port}`
+let globalres = undefined
 
 let devices = []
 let mqtt_groups = []
+
 let qiachip = new SmartSwitch(
   'priza 1',
-  'https://ae01.alicdn.com/kf/HTB1XJdxXPDuK1Rjy1zjq6zraFXat/QIACHIP-Wireless-Wifi-Light-Switch-Universal-433Mhz-10A-RF-Smart-Home-Module-Wifi-Remote-Control-Switch.jpg',
+  'https://community-assets.home-assistant.io/original/3X/8/a/8abc086dc2b6edf8e4fff33b1204385435042bc1.png',
   'openBeken',
   'qiachip_switch',
   ['General', 'Living Room'],
@@ -25,7 +28,7 @@ let qiachip = new SmartSwitch(
 )
 let athom = new SmartSwitch(
   'Athom switch',
-  'https://ae01.alicdn.com/kf/Hf06f6c56564444d4a66f6cd6a2fe835a9/ATHOM-Homekit-no-Neutral-Needed-WiFi-EU-Standard-Smart-Switch-Touch-key-1-gang-2-gang.jpg',
+  'https://1pc.co.il/images/thumbs/0010042_wifi-smart-switch-tuya-vers-2-gang-white-eu_510.jpeg',
   'tasmota',
   'athom2gang',
   ['General', 'Diana Room'],
@@ -71,6 +74,15 @@ let powerStrip = new SmartStrip(
   'STATUS8',
   'STATUS5'
 )
+let aubess_ir = new SmartIR(
+  'Horizon Remote',
+  'https://cf.shopee.ph/file/69fce45352701a9929822bfc88e42978_tn',
+  'openBeken',
+  'aubess_ir',
+  ['General'],
+  'STATUS5'
+)
+devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
 devices.push(plug2)
@@ -106,25 +118,24 @@ const client = mqtt.connect(conectURL, {
 
 client.on('connect', () => {
   for (let i = 0; i < devices.length; i += 1) {
-    if (
-      devices[i].device_type === 'smartStrip' ||
-      devices[i].device_type === 'smartSwitch'
-    ) {
-      for (
-        let index = 0;
-        index < devices[i].stat_power_topics.length;
-        index++
-      ) {
-        subscribe_to_topic(devices[i].stat_power_topics[index])
-      }
-      if (devices[i].sensor_topic) {
-        subscribe_to_topic(devices[i].sensor_topic)
-      }
-    }
-    subscribe_to_topic(devices[i].device_info_topic)
-    get_MAC_adress(devices[i].mqtt_name)
+    init_device(devices[i])
   }
 })
+const init_device = (device) => {
+  if (
+    device.device_type === 'smartStrip' ||
+    device.device_type === 'smartSwitch'
+  ) {
+    for (let index = 0; index < device.stat_power_topics.length; index++) {
+      subscribe_to_topic(device.stat_power_topics[index])
+    }
+    if (device.sensor_topic) {
+      subscribe_to_topic(device.sensor_topic)
+    }
+  }
+  subscribe_to_topic(device.device_info_topic)
+  get_MAC_adress(device.mqtt_name)
+}
 app.use(cors())
 app.use(bodyParser.json())
 
@@ -133,7 +144,6 @@ const subscribe_to_topic = (topic_to_subcribe) => {
     console.log(`Client subscried on ${topic_to_subcribe}`)
   })
 }
-
 const get_device = (mqtt_name) => {
   let filtered_devices = devices.filter(
     (device) => device.mqtt_name == mqtt_name
@@ -146,7 +156,30 @@ const delete_device = (mqtt_name) => {
   )
   devices = filtered_devices
 }
-
+// app.get('/stream', (req, res) => {
+//   res.writeHead(200, {
+//     'Content-Type': 'text/event-stream',
+//     'Cache-Control': 'no-cache',
+//     Connection: 'keep-alive',
+//   })
+//   globalres = res
+//   const id = new Date().toLocaleTimeString()
+//   globalres.write('id: ' + id + '\n')
+//   // res.write('data: ' + 'Helllo' + '\n\n')
+// })
+app.post('/smartIR', (req, res) => {
+  let current_device = get_device(req.query['device_name'])
+  let btn_code = req.query['btn_code']
+  if (current_device) {
+    try {
+      current_device.pressButton(client, btn_code)
+      res.json({ Succes: true })
+    } catch (error) {
+      console.log(error)
+      res.json({ Succes: false })
+    }
+  }
+})
 app.post('/addDevice', async (req, res) => {
   let current_device = new SmartPlug(req.query['device_name'])
   current_device.power_status = req.query['status']
@@ -170,7 +203,7 @@ app.post('/smartStrip', async (req, res) => {
       plug_index = i
     }
   }
-  await get_data(
+  await send_mqtt_cmnd(
     `cmnd/${current_device.mqtt_name}/${req_type}`,
     req.query['status']
   )
@@ -207,19 +240,19 @@ app.get('/smartStrip', async (req, res) => {
     } else if (current_device.manufacter === 'tasmota') {
       if (req_topic === 'POWER') {
         for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
-          await get_data(current_device.cmnd_power_topics[i], req_payload)
+          await send_mqtt_cmnd(current_device.cmnd_power_topics[i], req_payload)
         }
       } else if (req_topic === 'STATUS') {
-        await get_data(
+        await send_mqtt_cmnd(
           `cmnd/${current_device.mqtt_name}/${req_topic}`,
           req_payload
         )
       }
     }
-    res.json(current_device)
   }
+  res.json(current_device)
 })
-const get_data = (req_topic, req_payload) => {
+const send_mqtt_cmnd = (req_topic, req_payload) => {
   client.publish(
     `${req_topic}`,
     `${req_payload}`,
@@ -282,6 +315,16 @@ client.on('message', (topic, payload) => {
         current_device.IP = temp.StatusNET.IPAddress
       }
     }
+    // if (globalres) {
+    //   globalres.write(
+    //     'data: ' +
+    //       JSON.stringify({
+    //         mqtt_name: current_device.mqtt_name,
+    //         power_status: current_device.power_status,
+    //       }) +
+    //       '\n\n'
+    //   )
+    // }
   } catch (error) {
     console.log(error)
   }
