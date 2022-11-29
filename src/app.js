@@ -2,15 +2,37 @@ const mqtt = require('mqtt')
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const express = require('express')
+const app = express()
+const http = require('http')
+const { Server } = require('socket.io')
 const SmartStrip = require('./smartStrip.js')
 const SmartSwitch = require('./smartSwitch.js')
 const SmartIR = require('./smartIR.js')
-const app = express()
+app.use(cors())
+app.use(bodyParser.json())
+const server = http.createServer(app)
+const io = new Server(server, {
+  cors: {
+    origin: ['http://192.168.0.108:3000', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  },
+})
+io.on('connection', (socket) => {
+  console.log(
+    `A new conection from ${socket.handshake.headers.origin} with id:${socket.id}`
+  )
+  console.log(`Connected clients: ${io.engine.clientsCount}`)
+  socket.on('disconnect', () => {
+    console.log(`A client has been disconected.`)
+    console.log(`Connected clients: ${io.engine.clientsCount}`)
+  })
+})
+
+// const host = '192.168.0.108'
 const host = '192.168.0.108'
 const port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const conectURL = `mqtt://${host}:${port}`
-let globalres = undefined
 
 let devices = []
 let mqtt_groups = []
@@ -107,7 +129,7 @@ const filter_device_list = (filter, devices) => {
   }
   return filtered_devices
 }
-const client = mqtt.connect(conectURL, {
+const mqtt_client = mqtt.connect(conectURL, {
   clientId,
   clean: true,
   connectTimeout: 4000,
@@ -115,8 +137,7 @@ const client = mqtt.connect(conectURL, {
   password: 'public',
   reconnectPeriod: 1000,
 })
-
-client.on('connect', () => {
+mqtt_client.on('connect', () => {
   for (let i = 0; i < devices.length; i += 1) {
     init_device(devices[i])
   }
@@ -136,11 +157,8 @@ const init_device = (device) => {
   subscribe_to_topic(device.device_info_topic)
   get_MAC_adress(device.mqtt_name)
 }
-app.use(cors())
-app.use(bodyParser.json())
-
 const subscribe_to_topic = (topic_to_subcribe) => {
-  client.subscribe(`${topic_to_subcribe}`, () => {
+  mqtt_client.subscribe(`${topic_to_subcribe}`, () => {
     console.log(`Client subscried on ${topic_to_subcribe}`)
   })
 }
@@ -156,23 +174,12 @@ const delete_device = (mqtt_name) => {
   )
   devices = filtered_devices
 }
-// app.get('/stream', (req, res) => {
-//   res.writeHead(200, {
-//     'Content-Type': 'text/event-stream',
-//     'Cache-Control': 'no-cache',
-//     Connection: 'keep-alive',
-//   })
-//   globalres = res
-//   const id = new Date().toLocaleTimeString()
-//   globalres.write('id: ' + id + '\n')
-//   // res.write('data: ' + 'Helllo' + '\n\n')
-// })
 app.post('/smartIR', (req, res) => {
   let current_device = get_device(req.query['device_name'])
   let btn_code = req.query['btn_code']
   if (current_device) {
     try {
-      current_device.pressButton(client, btn_code)
+      current_device.pressButton(mqtt_client, btn_code)
       res.json({ Succes: true })
     } catch (error) {
       console.log(error)
@@ -253,7 +260,7 @@ app.get('/smartStrip', async (req, res) => {
   res.json(current_device)
 })
 const send_mqtt_cmnd = (req_topic, req_payload) => {
-  client.publish(
+  mqtt_client.publish(
     `${req_topic}`,
     `${req_payload}`,
     { qos: 0, retain: false },
@@ -265,7 +272,7 @@ const send_mqtt_cmnd = (req_topic, req_payload) => {
   )
 }
 const get_MAC_adress = (mqtt_name) => {
-  client.publish(
+  mqtt_client.publish(
     `cmnd/${mqtt_name}/STATUS`,
     `5`,
     { qos: 0, retain: false },
@@ -276,7 +283,7 @@ const get_MAC_adress = (mqtt_name) => {
     }
   )
 }
-client.on('message', (topic, payload) => {
+mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
   let current_device = get_device(buffer[1])
   if (buffer[0] === 'stat') {
@@ -308,6 +315,12 @@ client.on('message', (topic, payload) => {
           const temp = payload.toString()
           current_device.sensor_status = JSON.parse(temp)
         }
+        if (io) {
+          io.emit('update_smart_strip', {
+            mqtt_name: current_device.mqtt_name,
+            power_status: current_device.power_status,
+          })
+        }
       }
       if (topic === current_device.device_info_topic) {
         const temp = JSON.parse(payload.toString())
@@ -315,21 +328,11 @@ client.on('message', (topic, payload) => {
         current_device.IP = temp.StatusNET.IPAddress
       }
     }
-    // if (globalres) {
-    //   globalres.write(
-    //     'data: ' +
-    //       JSON.stringify({
-    //         mqtt_name: current_device.mqtt_name,
-    //         power_status: current_device.power_status,
-    //       }) +
-    //       '\n\n'
-    //   )
-    // }
   } catch (error) {
     console.log(error)
   }
 })
 
-app.listen(5000, () => {
+server.listen(5000, () => {
   console.log('Server listening on port 5000...')
 })
