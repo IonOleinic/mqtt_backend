@@ -46,6 +46,7 @@ class SmartIR extends Device {
     this.btn_9 = '9'
   }
   pressButton(client, btn_code) {
+    if(btn_code){
     client.publish(
       `${this.cmnd_topic}`,
       `${this.IR_protocol}-${this.bits}-${btn_code}-${this.repeats}`,
@@ -57,5 +58,6 @@ class SmartIR extends Device {
       }
     )
   }
+}
 }
 module.exports = SmartIR
