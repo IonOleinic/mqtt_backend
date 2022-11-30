@@ -206,7 +206,6 @@ app.post('/smartStrip', async (req, res) => {
       current_device.cmnd_power_topics[i] ===
       `cmnd/${current_device.mqtt_name}/${req_type}`
     ) {
-      //current_device.power_status[i] = req.query['status']
       plug_index = i
     }
   }
