@@ -8,6 +8,17 @@ const { Server } = require('socket.io')
 const SmartStrip = require('./smartStrip.js')
 const SmartSwitch = require('./smartSwitch.js')
 const SmartIR = require('./smartIR.js')
+const DeviceType={
+  smartStrip:"smartStrip",
+  smartPlug:"smartStrip",
+  smartSwitch:"smartStrip",
+  smartIR:"smartIR",
+  smartDoorSensor:"smartDoorSensor",
+  smartTempSensor:"smartTempSensor",
+  smartMotionSensor:"smartTempSensor",
+}
+const AllTypes=Object.keys(DeviceType)
+
 app.use(cors())
 app.use(bodyParser.json())
 const server = http.createServer(app)
@@ -28,7 +39,6 @@ io.on('connection', (socket) => {
   })
 })
 
-// const host = '192.168.0.108'
 const host = '192.168.0.108'
 const port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
@@ -143,7 +153,10 @@ mqtt_client.on('connect', () => {
   }
 })
 const init_device = (device) => {
-  if (
+  if(device.device_type==='smartIR'){
+    subscribe_to_topic(device.receive_topic)
+  }
+  else if (
     device.device_type === 'smartStrip' ||
     device.device_type === 'smartSwitch'
   ) {
@@ -193,7 +206,7 @@ app.post('/addDevice', async (req, res) => {
   if (req.query['power_topic']) {
     current_device.power_topic = req.query['power_topic']
   }
-  await get_MAC_adress(current_device.mqtt_name)
+  get_MAC_adress(current_device.mqtt_name)
   devices.push(current_device)
   res.json(current_device)
 })
@@ -227,6 +240,9 @@ app.get('/devices', (req, res) => {
 app.get('/mqtt_groups', (req, res) => {
   get_all_groups(mqtt_groups, devices)
   res.json(mqtt_groups)
+})
+app.get('/deviceTypes',(req,res)=>{
+  res.json(AllTypes)
 })
 app.post('/deleteDevice', async (req, res) => {
   let device_name = req.query['device_name']
@@ -292,7 +308,17 @@ mqtt_client.on('message', (topic, payload) => {
   }
   try {
     if (current_device) {
-      if (
+      if(current_device.device_type==='smartIR'){
+        current_device.received_code=payload.toString()
+        console.log(current_device.received_code);
+        if (io) {
+          io.emit('update_smart_ir', {
+            mqtt_name: current_device.mqtt_name,
+            received_code: current_device.received_code,
+          })
+        }
+      }
+      else if (
         current_device.device_type === 'smartStrip' ||
         current_device.device_type === 'smartSwitch'
       ) {
