@@ -52,22 +52,16 @@ let qiachip = new SmartSwitch(
   'https://community-assets.home-assistant.io/original/3X/8/a/8abc086dc2b6edf8e4fff33b1204385435042bc1.png',
   'openBeken',
   'qiachip_switch',
-  ['General', 'Living Room'],
-  'POWER',
+  ['Living Room'],
   1,
-  'OFF',
-  'STATUS5'
 )
 let athom = new SmartSwitch(
   'Athom switch',
   'https://1pc.co.il/images/thumbs/0010042_wifi-smart-switch-tuya-vers-2-gang-white-eu_510.jpeg',
   'tasmota',
   'athom2gang',
-  ['General', 'Diana Room'],
-  'POWER',
-  2,
-  'OFF',
-  'STATUS5'
+  ['Diana Room'],
+  2
 )
 
 let plug1 = new SmartStrip(
@@ -75,43 +69,31 @@ let plug1 = new SmartStrip(
   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
   'tasmota',
   'gosund_sp111_1',
-  ['General', 'Diana Room'],
-  'POWER',
+  ['Diana Room'],
   1,
-  'OFF',
-  'STATUS8',
-  'STATUS5'
 )
 let plug2 = new SmartStrip(
   'plug2',
   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
   'tasmota',
   'gosund_sp111_2',
-  ['General'],
-  'POWER',
+  [],
   1,
-  'OFF',
-  'STATUS8',
-  'STATUS5'
 )
 let powerStrip = new SmartStrip(
   'power strip',
   'https://s13emagst.akamaized.net/products/32075/32074500/images/res_e3072d09e97388c6a8f1c747e3dde571.jpg',
   'tasmota',
   'gosund_p1',
-  ['General'],
-  'POWER',
+  [],
   4,
-  'OFF',
-  'STATUS8',
-  'STATUS5'
 )
 let aubess_ir = new SmartIR(
   'Horizon Remote',
   'https://cf.shopee.ph/file/69fce45352701a9929822bfc88e42978_tn',
   'openBeken',
   'aubess_ir',
-  ['General'],
+  [],
   'STATUS5'
 )
 devices.push(aubess_ir)
@@ -200,15 +182,37 @@ app.post('/smartIR', (req, res) => {
     }
   }
 })
-app.post('/addDevice', async (req, res) => {
-  let current_device = new SmartPlug(req.query['device_name'])
-  current_device.power_status = req.query['status']
-  if (req.query['power_topic']) {
-    current_device.power_topic = req.query['power_topic']
+app.post('/addDevice',(req, res) => {
+ let arrived=req.body
+ let result={Succes:false,msg:"ERROR"}
+ let device={}
+ const try_add_device=(device)=>{
+  if(get_device(device.mqtt_name)){
+    return {Succes:false,msg:"Device already exists!"}
+  }else{
+    devices.push(device)
+    init_device(device)
+    return {Succes:true,msg:"Device added with succes"}
   }
-  get_MAC_adress(current_device.mqtt_name)
-  devices.push(current_device)
-  res.json(current_device)
+ }
+ switch (arrived.type) {
+  case "smartPlug" || "smartStrip":
+    device=new SmartStrip(arrived.name,arrived.iconUrl,arrived.manufacter,arrived.mqttName,arrived.groups.split(","),arrived.props.nr_of_sockets)
+    result=try_add_device(device)
+    break;
+  case "smartSwitch":
+    device=new SmartSwitch(arrived.name,arrived.iconUrl,arrived.manufacter,arrived.mqttName,arrived.groups.split(","),arrived.props.nr_of_sockets)
+    result=try_add_device(device)
+    break;
+  case "smartIR":
+  
+    break;
+  default:
+    result.Succes=false
+    result.msg="Error ocurred!"
+    break;
+ }
+ res.json(result)
 })
 app.post('/smartStrip', async (req, res) => {
   let current_device = get_device(req.query['device_name'])

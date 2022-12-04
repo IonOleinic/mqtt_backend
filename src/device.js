@@ -16,7 +16,9 @@ class Device {
     this.battery = battery
     this.name = name
     this.mqtt_name = mqtt_name
+    this.mqtt_group=[]
     this.mqtt_group = mqtt_group
+    this.mqtt_group.splice(0,0,"General")
     this.device_type = device_type
     this.device_info_topic = `stat/${mqtt_name}/${device_info_topic}`
     this.MAC = MAC
