@@ -11,6 +11,7 @@ class Device {
     IP,
     battery
   ) {
+    this.id = Math.random().toString(16).slice(3)
     this.manufacter = manufacter
     this.img =
       img === ''

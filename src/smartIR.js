@@ -1,7 +1,7 @@
 const Device = require('./device')
 
 class SmartIR extends Device {
-  constructor(name, img, manufacter, mqtt_name, mqtt_group, btn_props) {
+  constructor(name, img, manufacter, mqtt_name, mqtt_group, PRESET) {
     super(
       name,
       img,
@@ -16,13 +16,13 @@ class SmartIR extends Device {
     )
     this.receive_topic = `${mqtt_name}/ir/get`
     this.repeats = '1'
-    this.bits = btn_props.bits
+    this.bits = PRESET.bits
     this.cmnd_topic = `cmnd/${mqtt_name}/IRSend`
-    this.IR_protocol = btn_props.protocol
+    this.IR_protocol = PRESET.protocol
     this.buttons = {}
-    if (btn_props.buttons) {
-      for (let i = 0; i < btn_props.buttons.length; i++) {
-        this.buttons[`${btn_props.buttons[i].name}`] = btn_props.buttons[i].code
+    if (PRESET.buttons) {
+      for (let i = 0; i < PRESET.buttons.length; i++) {
+        this.buttons[`${PRESET.buttons[i].name}`] = PRESET.buttons[i].code
       }
     }
   }
