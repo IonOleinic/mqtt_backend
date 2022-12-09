@@ -9,7 +9,7 @@ const SmartStrip = require('./smartStrip.js')
 const SmartSwitch = require('./smartSwitch.js')
 const SmartIR = require('./smartIR.js')
 const TempIR = require('./tempIR.js')
-let tempIR
+
 const DeviceType = {
   smartStrip: 'smartStrip',
   smartPlug: 'smartStrip',
@@ -20,7 +20,8 @@ const DeviceType = {
   smartMotionSensor: 'smartTempSensor',
 }
 const AllTypes = Object.keys(DeviceType)
-
+const FrontURL = 'http://192.168.0.108:3000'
+const FrontPort = 3000
 app.use(cors())
 app.use(bodyParser.json())
 const server = http.createServer(app)
@@ -41,12 +42,15 @@ io.on('connection', (socket) => {
   })
 })
 
-const host = '192.168.0.108'
-const port = '1883'
+const mqtt_host = '192.168.0.108'
+// const mqtt_host = 'broker.emqx.io'
+const mqtt_port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
-const conectURL = `mqtt://${host}:${port}`
+const conectURL = `mqtt://${mqtt_host}:${mqtt_port}`
 
+let tempIR
 let devices = []
+let tempDevices = []
 let mqtt_groups = []
 
 let qiachip = new SmartSwitch(
@@ -54,7 +58,7 @@ let qiachip = new SmartSwitch(
   'https://community-assets.home-assistant.io/original/3X/8/a/8abc086dc2b6edf8e4fff33b1204385435042bc1.png',
   'openBeken',
   'qiachip_switch',
-  ['Living Room'],
+  'Living Room',
   1
 )
 let athom = new SmartSwitch(
@@ -62,7 +66,7 @@ let athom = new SmartSwitch(
   'https://1pc.co.il/images/thumbs/0010042_wifi-smart-switch-tuya-vers-2-gang-white-eu_510.jpeg',
   'tasmota',
   'athom2gang',
-  ['Diana Room'],
+  'Diana Room,dawda,faefsefsf',
   2
 )
 
@@ -71,7 +75,7 @@ let plug1 = new SmartStrip(
   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
   'tasmota',
   'gosund_sp111_1',
-  ['Diana Room'],
+  'Diana Room',
   1
 )
 let plug2 = new SmartStrip(
@@ -79,7 +83,7 @@ let plug2 = new SmartStrip(
   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
   'tasmota',
   'gosund_sp111_2',
-  [],
+  '',
   1
 )
 let powerStrip = new SmartStrip(
@@ -87,17 +91,17 @@ let powerStrip = new SmartStrip(
   'https://s13emagst.akamaized.net/products/32075/32074500/images/res_e3072d09e97388c6a8f1c747e3dde571.jpg',
   'tasmota',
   'gosund_p1',
-  [],
+  '',
   4
 )
-let aubess_ir = new SmartIR(
-  'Horizon Remote',
-  'https://cf.shopee.ph/file/69fce45352701a9929822bfc88e42978_tn',
-  'openBeken',
-  'aubess_ir',
-  [],
-  'STATUS5'
-)
+// let aubess_ir = new SmartIR(
+//   'Horizon Remote',
+//   'https://cf.shopee.ph/file/69fce45352701a9929822bfc88e42978_tn',
+//   'openBeken',
+//   'aubess_ir',
+//   '',
+//   'STATUS5'
+// )
 // devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
@@ -127,8 +131,8 @@ const mqtt_client = mqtt.connect(conectURL, {
   clientId,
   clean: true,
   connectTimeout: 4000,
-  username: 'emqx',
-  password: 'public',
+  username: 'mqtt',
+  password: 'tasmota',
   reconnectPeriod: 1000,
 })
 mqtt_client.on('connect', () => {
@@ -143,15 +147,15 @@ const init_device = (device) => {
     device.device_type === 'smartStrip' ||
     device.device_type === 'smartSwitch'
   ) {
-    for (let index = 0; index < device.stat_power_topics.length; index++) {
-      subscribe_to_topic(device.stat_power_topics[index])
+    for (let i = 0; i < device.stat_power_topics.length; i++) {
+      subscribe_to_topic(device.stat_power_topics[i])
     }
-    if (device.sensor_topic) {
-      subscribe_to_topic(device.sensor_topic)
+    if (device.stat_sensor_topic) {
+      subscribe_to_topic(device.stat_sensor_topic)
     }
   }
   subscribe_to_topic(device.device_info_topic)
-  get_MAC_adress(device.mqtt_name)
+  get_device_info(device.mqtt_name)
 }
 const subscribe_to_topic = (topic_to_subcribe) => {
   mqtt_client.subscribe(`${topic_to_subcribe}`, () => {
@@ -160,6 +164,12 @@ const subscribe_to_topic = (topic_to_subcribe) => {
 }
 const get_device = (mqtt_name) => {
   let filtered_devices = devices.filter(
+    (device) => device.mqtt_name == mqtt_name
+  )
+  return filtered_devices[0]
+}
+const get_temp_device = (mqtt_name) => {
+  let filtered_devices = tempDevices.filter(
     (device) => device.mqtt_name == mqtt_name
   )
   return filtered_devices[0]
@@ -186,7 +196,7 @@ app.post('/smartIR', (req, res) => {
 app.post('/tempIR', (req, res) => {
   try {
     tempIR = new TempIR(req.body.manufacter, req.body.mqtt_name)
-    devices.push(tempIR)
+    tempDevices.push(tempIR)
     subscribe_to_topic(tempIR.receive_topic)
   } catch (error) {
     console.log(error)
@@ -214,7 +224,7 @@ app.post('/addDevice', (req, res) => {
         arrived.iconUrl,
         arrived.manufacter,
         arrived.mqttName,
-        arrived.groups.split(','),
+        arrived.groups,
         arrived.props.nr_of_sockets
       )
       result = try_add_device(device)
@@ -225,12 +235,22 @@ app.post('/addDevice', (req, res) => {
         arrived.iconUrl,
         arrived.manufacter,
         arrived.mqttName,
-        arrived.groups.split(','),
+        arrived.groups,
         arrived.props.nr_of_sockets
       )
       result = try_add_device(device)
       break
     case 'smartIR':
+      //delete_device(arrived.mqttName)
+      device = new SmartIR(
+        arrived.name,
+        arrived.iconUrl,
+        arrived.manufacter,
+        arrived.mqttName,
+        arrived.groups,
+        arrived.props
+      )
+      result = try_add_device(device)
       break
     default:
       result.Succes = false
@@ -239,30 +259,36 @@ app.post('/addDevice', (req, res) => {
   }
   res.json(result)
 })
-app.post('/smartStrip', async (req, res) => {
+app.get('/smartStrip', (req, res) => {
   let current_device = get_device(req.query['device_name'])
-  let req_type = req.query['req_type']
-  let plug_index = -1
-  for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
-    if (
-      current_device.cmnd_power_topics[i] ===
-      `cmnd/${current_device.mqtt_name}/${req_type}`
-    ) {
-      plug_index = i
+  if (current_device) {
+    let req_topic = req.query['req_topic']
+    if (current_device.manufacter === 'openBeken') {
+      //TODO
+    } else if (current_device.manufacter === 'tasmota') {
+      if (req_topic === 'POWER') {
+        for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
+          current_device.change_power_state(mqtt_client, i + 1, '')
+        }
+      } else if (req_topic === 'STATUS') {
+        current_device.send_sensor_req(mqtt_client)
+      }
     }
   }
-  await send_mqtt_cmnd(
-    `cmnd/${current_device.mqtt_name}/${req_type}`,
-    req.query['status']
-  )
-
-  res.json({ Power: `${current_device.power_status[plug_index]}` })
+  res.json(current_device)
+})
+app.post('/smartStrip', async (req, res) => {
+  let current_device = get_device(req.query['device_name'])
+  let socket_nr = req.query['socket_nr']
+  let status = req.query['status']
+  current_device.change_power_state(mqtt_client, socket_nr, status)
+  res.json({ Power: `${current_device.power_status[Number(socket_nr) - 1]}` })
 })
 app.get('/devices', (req, res) => {
   const filter = decodeURIComponent(req.query['filter'])
   if (filter !== '') {
     res.json(filter_device_list(filter, devices))
-  } else {
+  } else if (filter === '' || filter === undefined) {
     res.json(devices)
   }
 })
@@ -282,27 +308,7 @@ app.post('/deleteDevice', async (req, res) => {
     res.json(devices)
   }
 })
-app.get('/smartStrip', async (req, res) => {
-  let current_device = get_device(req.query['device_name'])
-  if (current_device) {
-    let req_topic = req.query['req_topic']
-    let req_payload = req.query['req_payload']
-    if (current_device.manufacter === 'openBeken') {
-    } else if (current_device.manufacter === 'tasmota') {
-      if (req_topic === 'POWER') {
-        for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
-          await send_mqtt_cmnd(current_device.cmnd_power_topics[i], req_payload)
-        }
-      } else if (req_topic === 'STATUS') {
-        await send_mqtt_cmnd(
-          `cmnd/${current_device.mqtt_name}/${req_topic}`,
-          req_payload
-        )
-      }
-    }
-  }
-  res.json(current_device)
-})
+
 const send_mqtt_cmnd = (req_topic, req_payload) => {
   mqtt_client.publish(
     `${req_topic}`,
@@ -315,7 +321,7 @@ const send_mqtt_cmnd = (req_topic, req_payload) => {
     }
   )
 }
-const get_MAC_adress = (mqtt_name) => {
+const get_device_info = (mqtt_name) => {
   mqtt_client.publish(
     `cmnd/${mqtt_name}/STATUS`,
     `5`,
@@ -329,17 +335,18 @@ const get_MAC_adress = (mqtt_name) => {
 }
 mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
-  let current_device = get_device(buffer[1])
-  if (buffer[0] === 'stat') {
-    current_device = get_device(buffer[1])
-  } else {
-    current_device = get_device(buffer[0])
+  let current_device = get_temp_device(buffer[0])
+  if (!current_device) {
+    if (buffer[0] === 'stat') {
+      current_device = get_device(buffer[1])
+    } else {
+      current_device = get_device(buffer[0])
+    }
   }
   try {
     if (current_device) {
       if (current_device.device_type === 'tempIR') {
         current_device.received_code = payload.toString()
-        console.log(current_device.received_code)
         if (io) {
           io.emit('update_temp_ir', {
             mqtt_name: current_device.mqtt_name,
@@ -364,7 +371,7 @@ mqtt_client.on('message', (topic, payload) => {
           }
         }
 
-        if (topic === current_device.sensor_topic) {
+        if (topic === current_device.stat_sensor_topic) {
           const temp = payload.toString()
           current_device.sensor_status = JSON.parse(temp)
         }
@@ -385,7 +392,6 @@ mqtt_client.on('message', (topic, payload) => {
     console.log(error)
   }
 })
-
 server.listen(5000, () => {
   console.log('Server listening on port 5000...')
 })

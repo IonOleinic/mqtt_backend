@@ -1,15 +1,7 @@
 const Device = require('./device')
 
 class SmartStrip extends Device {
-  constructor(
-    name,
-    img,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    nr_of_plugs
-  ) {
-
+  constructor(name, img, manufacter, mqtt_name, mqtt_group, nr_of_plugs) {
     super(
       name,
       img,
@@ -17,7 +9,7 @@ class SmartStrip extends Device {
       mqtt_name,
       mqtt_group,
       'smartStrip',
-      "STATUS5",
+      'STATUS5',
       'MAC',
       'IP',
       false
@@ -45,25 +37,48 @@ class SmartStrip extends Device {
     this.power_status = []
 
     for (let i = 0; i < nr_of_plugs; i++) {
-      this.cmnd_power_topics.push(
-        `cmnd/${mqtt_name}/POWER${i + 1}`
-      )
+      this.cmnd_power_topics.push(`cmnd/${mqtt_name}/POWER${i + 1}`)
       if (this.manufacter === 'openBeken') {
-        this.sensor_topic = `TODO`
+        this.cmnd_sensor_topic = `TODO`
+        this.cmnd_sensor_payload = 'TODO'
+        this.stat_sensor_topic = `TODO`
         this.stat_power_topics.push(`${mqtt_name}/${i + 1}/get`)
       } else if (this.manufacter === 'tasmota') {
-        this.sensor_topic = `stat/${mqtt_name}/STATUS8`
+        this.cmnd_sensor_topic = `cmnd/${mqtt_name}/STATUS`
+        this.cmnd_sensor_payload = '8'
+        this.stat_sensor_topic = `stat/${mqtt_name}/STATUS8`
         if (nr_of_plugs == 1) {
           this.stat_power_topics.push(`stat/${mqtt_name}/POWER`)
         } else {
-          this.stat_power_topics.push(
-            `stat/${mqtt_name}/POWER${i + 1}`
-          )
+          this.stat_power_topics.push(`stat/${mqtt_name}/POWER${i + 1}`)
         }
       }
-      this.power_status.push("OFF")
+      this.power_status.push('OFF')
     }
-    
+  }
+  change_power_state(mqtt_client, socket, state) {
+    mqtt_client.publish(
+      `cmnd/${this.mqtt_name}/POWER${socket}`,
+      `${state}`,
+      { qos: 0, retain: false },
+      (error) => {
+        if (error) {
+          console.log(error)
+        }
+      }
+    )
+  }
+  send_sensor_req(mqtt_client) {
+    mqtt_client.publish(
+      this.cmnd_sensor_topic,
+      this.cmnd_sensor_payload,
+      { qos: 0, retain: false },
+      (error) => {
+        if (error) {
+          console.log(error)
+        }
+      }
+    )
   }
 }
 module.exports = SmartStrip
