@@ -125,6 +125,15 @@ const filter_device_list = (filter, devices) => {
   }
   return filtered_devices
 }
+const update_device = (old_device, new_device) => {
+  old_device.name = new_device.name
+  old_device.mqtt_name = new_device.mqtt_name
+  old_device.group = new_device.group
+  old_device.favorite = new_device.favorite
+  old_device.img = new_device.img
+  old_device.manufacter = new_device.manufacter
+  // old_device = JSON.parse(JSON.stringify(new_device))
+}
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
   clean: true,
@@ -257,6 +266,12 @@ app.post('/addDevice', (req, res) => {
       break
   }
   res.json(result)
+})
+app.post('/updateDevice', (req, res) => {
+  let updatedDevice = req.body
+  let current_device = get_device_by_id(devices, updatedDevice.id)
+  update_device(current_device, updatedDevice)
+  res.json({ Succes: true })
 })
 app.get('/smartStrip', (req, res) => {
   let current_device = get_device(devices, req.query['device_name'])

@@ -14,6 +14,10 @@ class SmartSwitch extends Device {
       'IP',
       false
     )
+    if (img === '') {
+      this.img =
+        'https://s13emagst.akamaized.net/products/50754/50753334/images/res_23e98f0d367e75ffbc82c216338f2309.jpg'
+    }
     this.nr_of_plugs = nr_of_plugs
     this.cmnd_power_topics = []
     this.stat_power_topics = []

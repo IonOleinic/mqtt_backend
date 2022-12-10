@@ -11,14 +11,19 @@ class Device {
     IP,
     battery
   ) {
+    this.favorite = false
     this.id = Math.random().toString(16).slice(3)
+    if (name === '') {
+      this.name = 'Device' + Math.random().toString(4).slice(2, 4)
+    } else {
+      this.name = name
+    }
     this.manufacter = manufacter
     this.img =
       img === ''
         ? 'https://cdn-icons-png.flaticon.com/512/2948/2948319.png'
         : img
     this.battery = battery
-    this.name = name
     this.mqtt_name = mqtt_name
     if (mqtt_group === '') {
       this.mqtt_group = []

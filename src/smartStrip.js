@@ -14,6 +14,10 @@ class SmartStrip extends Device {
       'IP',
       false
     )
+    if (img === '') {
+      this.img =
+        'https://s13emagst.akamaized.net/products/41611/41610854/images/res_d0e3e75338d6c66ce67fb30eb262ba18.png?width=300&height=300&hash=27432531CE4D755B47A28FB1B0327F48'
+    }
     this.sensor_status = {
       StatusSNS: {
         Time: '0000-00-00T00:00:00',

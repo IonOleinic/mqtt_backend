@@ -14,6 +14,10 @@ class SmartIR extends Device {
       'IP',
       false
     )
+    if (img === '') {
+      this.img =
+        'https://www.expert4house.com/1281-large_default/tuya-smart-ir-rf-control-wifi-universal.jpg'
+    }
     this.receive_topic = `${mqtt_name}/ir/get`
     this.repeats = '1'
     this.bits = PRESET.bits
