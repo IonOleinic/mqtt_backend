@@ -107,6 +107,7 @@ devices.push(powerStrip)
 devices.push(plug2)
 devices.push(qiachip)
 devices.push(athom)
+console.log(devices[0])
 const get_all_groups = (mqtt_groups, devices) => {
   for (let i = 0; i < devices.length; i++) {
     for (let j = 0; j < devices[i].mqtt_group.length; j++) {
@@ -128,7 +129,7 @@ const filter_device_list = (filter, devices) => {
 const update_device = (old_device, new_device) => {
   old_device.name = new_device.name
   old_device.mqtt_name = new_device.mqtt_name
-  old_device.group = new_device.group
+  old_device.mqtt_group = new_device.mqtt_group
   old_device.favorite = new_device.favorite
   old_device.img = new_device.img
   old_device.manufacter = new_device.manufacter
@@ -270,8 +271,12 @@ app.post('/addDevice', (req, res) => {
 app.post('/updateDevice', (req, res) => {
   let updatedDevice = req.body
   let current_device = get_device_by_id(devices, updatedDevice.id)
-  update_device(current_device, updatedDevice)
-  res.json({ Succes: true })
+  try {
+    update_device(current_device, updatedDevice)
+    res.json({ Succes: true, msg: 'Device modified' })
+  } catch (error) {
+    res.json({ Succes: false, msg: 'Error.Try again' })
+  }
 })
 app.get('/smartStrip', (req, res) => {
   let current_device = get_device(devices, req.query['device_name'])
@@ -314,7 +319,16 @@ app.post('/device/setinterval', (req, res) => {
   // current_device.change_on_interval(mqtt_client, miliseconds, socket_nr, state)
   res.json({ Succes: true })
 })
+app.get('/device/:id', (req, res) => {
+  let current_device = get_device_by_id(devices, req.params['id'])
+  if (current_device) {
+    res.json(current_device)
+  } else {
+    res.json({ Succes: false, msg: "Device doesn't exist" })
+  }
+})
 app.get('/mqtt_groups', (req, res) => {
+  mqtt_groups = []
   get_all_groups(mqtt_groups, devices)
   res.json(mqtt_groups)
 })
