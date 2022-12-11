@@ -306,6 +306,14 @@ app.get('/devices', (req, res) => {
     res.json(devices)
   }
 })
+app.post('/device/setinterval', (req, res) => {
+  // let miliseconds = req.query['miliseconds']
+  // let state = req.query['state']
+  // let socket_nr = req.query['socket_nr']
+  // let current_device = get_device_by_id(devices, req.query['device_id'])
+  // current_device.change_on_interval(mqtt_client, miliseconds, socket_nr, state)
+  res.json({ Succes: true })
+})
 app.get('/mqtt_groups', (req, res) => {
   get_all_groups(mqtt_groups, devices)
   res.json(mqtt_groups)

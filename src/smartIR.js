@@ -1,7 +1,15 @@
 const Device = require('./device')
 
 class SmartIR extends Device {
-  constructor(name, img, manufacter, mqtt_name, mqtt_group, PRESET) {
+  constructor(
+    name,
+    img,
+    manufacter,
+    mqtt_name,
+    mqtt_group,
+    PRESET,
+    favorite = false
+  ) {
     super(
       name,
       img,
@@ -12,7 +20,8 @@ class SmartIR extends Device {
       'STATUS5',
       'MAC',
       'IP',
-      false
+      false,
+      favorite
     )
     if (img === '') {
       this.img =

@@ -9,12 +9,13 @@ class Device {
     device_info_topic,
     MAC,
     IP,
-    battery
+    battery,
+    favorite = false
   ) {
-    this.favorite = false
+    this.favorite = favorite
     this.id = Math.random().toString(16).slice(3)
     if (name === '') {
-      this.name = 'Device' + Math.random().toString(4).slice(2, 4)
+      this.name = 'Device' + Math.random().toString(4).slice(4, 7)
     } else {
       this.name = name
     }
