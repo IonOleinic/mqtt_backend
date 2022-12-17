@@ -5,11 +5,11 @@ const express = require('express')
 const app = express()
 const http = require('http')
 const { Server } = require('socket.io')
-const SmartStrip = require('./smartStrip.js')
-const SmartSwitch = require('./smartSwitch.js')
-const SmartIR = require('./smartIR.js')
-const TempIR = require('./tempIR.js')
-const Horizon_IR = require('./IRPresets.js')
+const SmartStrip = require('./Devices/smartStrip.js')
+const SmartSwitch = require('./Devices/smartSwitch.js')
+const SmartIR = require('./Devices/smartIR.js')
+const TempIR = require('./Devices/tempIR.js')
+const Horizon_IR = require('./Devices/IRPresets.js')
 const DeviceType = {
   smartStrip: 'smartStrip',
   smartPlug: 'smartStrip',
