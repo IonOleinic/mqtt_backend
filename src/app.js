@@ -8,6 +8,7 @@ const { Server } = require('socket.io')
 const SmartStrip = require('./Devices/smartStrip.js')
 const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
+<<<<<<< HEAD
 const Scene=require('./Scenes/Scene.js')
 const DeviceType={
   smartStrip:"smartStrip",
@@ -17,6 +18,18 @@ const DeviceType={
   smartDoorSensor:"smartDoorSensor",
   smartTempSensor:"smartTempSensor",
   smartMotionSensor:"smartTempSensor",
+=======
+const TempIR = require('./Devices/tempIR.js')
+const Horizon_IR = require('./Devices/IRPresets.js')
+const DeviceType = {
+  smartStrip: 'smartStrip',
+  smartPlug: 'smartStrip',
+  smartSwitch: 'smartStrip',
+  smartIR: 'smartIR',
+  smartDoorSensor: 'smartDoorSensor',
+  smartTempSensor: 'smartTempSensor',
+  smartMotionSensor: 'smartTempSensor',
+>>>>>>> f5e1299
 }
 const AllTypes=Object.keys(DeviceType)
 
