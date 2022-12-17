@@ -8,17 +8,6 @@ const { Server } = require('socket.io')
 const SmartStrip = require('./Devices/smartStrip.js')
 const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
-<<<<<<< HEAD
-const Scene=require('./Scenes/Scene.js')
-const DeviceType={
-  smartStrip:"smartStrip",
-  smartPlug:"smartStrip",
-  smartSwitch:"smartStrip",
-  smartIR:"smartIR",
-  smartDoorSensor:"smartDoorSensor",
-  smartTempSensor:"smartTempSensor",
-  smartMotionSensor:"smartTempSensor",
-=======
 const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const DeviceType = {
@@ -29,10 +18,10 @@ const DeviceType = {
   smartDoorSensor: 'smartDoorSensor',
   smartTempSensor: 'smartTempSensor',
   smartMotionSensor: 'smartTempSensor',
->>>>>>> f5e1299
 }
-const AllTypes=Object.keys(DeviceType)
-
+const AllTypes = Object.keys(DeviceType)
+const FrontURL = 'http://192.168.0.108:3000'
+const FrontPort = 3000
 app.use(cors())
 app.use(bodyParser.json())
 const server = http.createServer(app)
@@ -52,13 +41,15 @@ io.on('connection', (socket) => {
     console.log(`Connected clients: ${io.engine.clientsCount}`)
   })
 })
-
-const host = '192.168.0.108'
-const port = '1883'
+const mqtt_host = '192.168.0.108'
+// const mqtt_host = 'broker.emqx.io'
+const mqtt_port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
-const conectURL = `mqtt://${host}:${port}`
+const conectURL = `mqtt://${mqtt_host}:${mqtt_port}`
 
+let tempIR
 let devices = []
+let tempDevices = []
 let mqtt_groups = []
 
 let qiachip = new SmartSwitch(
@@ -66,7 +57,7 @@ let qiachip = new SmartSwitch(
   'https://community-assets.home-assistant.io/original/3X/8/a/8abc086dc2b6edf8e4fff33b1204385435042bc1.png',
   'openBeken',
   'qiachip_switch',
-  '',
+  'Living Room',
   1
 )
 let athom = new SmartSwitch(
@@ -74,7 +65,7 @@ let athom = new SmartSwitch(
   'https://1pc.co.il/images/thumbs/0010042_wifi-smart-switch-tuya-vers-2-gang-white-eu_510.jpeg',
   'tasmota',
   'athom2gang',
-  'Diana Room',
+  'Diana Room,dawda,faefsefsf',
   2
 )
 
@@ -84,7 +75,7 @@ let plug1 = new SmartStrip(
   'tasmota',
   'gosund_sp111_1',
   'Diana Room',
-  1,
+  1
 )
 let plug2 = new SmartStrip(
   'plug2',
@@ -92,7 +83,7 @@ let plug2 = new SmartStrip(
   'tasmota',
   'gosund_sp111_2',
   '',
-  1,
+  1
 )
 let powerStrip = new SmartStrip(
   'power strip',
@@ -100,7 +91,7 @@ let powerStrip = new SmartStrip(
   'tasmota',
   'gosund_p1',
   '',
-  4,
+  4
 )
 let aubess_ir = new SmartIR(
   'Horizon Remote',
@@ -108,7 +99,7 @@ let aubess_ir = new SmartIR(
   'openBeken',
   'aubess_ir',
   '',
-  'STATUS5'
+  new Horizon_IR()
 )
 devices.push(aubess_ir)
 devices.push(plug1)
@@ -116,7 +107,7 @@ devices.push(powerStrip)
 devices.push(plug2)
 devices.push(qiachip)
 devices.push(athom)
-
+console.log(devices[0])
 const get_all_groups = (mqtt_groups, devices) => {
   for (let i = 0; i < devices.length; i++) {
     for (let j = 0; j < devices[i].mqtt_group.length; j++) {
@@ -135,59 +126,67 @@ const filter_device_list = (filter, devices) => {
   }
   return filtered_devices
 }
+const update_device = (old_device, new_device) => {
+  old_device.name = new_device.name
+  old_device.mqtt_name = new_device.mqtt_name
+  old_device.mqtt_group = new_device.mqtt_group
+  old_device.favorite = new_device.favorite
+  old_device.img = new_device.img
+  old_device.manufacter = new_device.manufacter
+  // old_device = JSON.parse(JSON.stringify(new_device))
+}
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
   clean: true,
   connectTimeout: 4000,
-  username: 'emqx',
-  password: 'public',
+  username: 'mqtt',
+  password: 'tasmota',
   reconnectPeriod: 1000,
 })
 mqtt_client.on('connect', () => {
   for (let i = 0; i < devices.length; i += 1) {
     init_device(devices[i])
   }
-  // console.log(new Date());
-  // const scene=new Scene(mqtt_client,devices[1])
-  // scene.action('2022-12-16T18:36:00Z','2022-12-16T18:37:00Z')
 })
 const init_device = (device) => {
-  if(device.device_type==='smartIR'){
+  if (device.device_type === 'smartIR') {
     subscribe_to_topic(device.receive_topic)
-  }
-  else if (
+  } else if (
     device.device_type === 'smartStrip' ||
     device.device_type === 'smartSwitch'
   ) {
-    for (let index = 0; index < device.stat_power_topics.length; index++) {
-      subscribe_to_topic(device.stat_power_topics[index])
+    for (let i = 0; i < device.stat_power_topics.length; i++) {
+      subscribe_to_topic(device.stat_power_topics[i])
     }
-    if (device.sensor_topic) {
-      subscribe_to_topic(device.sensor_topic)
+    if (device.stat_sensor_topic) {
+      subscribe_to_topic(device.stat_sensor_topic)
     }
   }
   subscribe_to_topic(device.device_info_topic)
-  get_MAC_adress(device.mqtt_name)
+  get_device_info(device.mqtt_name)
 }
 const subscribe_to_topic = (topic_to_subcribe) => {
   mqtt_client.subscribe(`${topic_to_subcribe}`, () => {
     console.log(`Client subscried on ${topic_to_subcribe}`)
   })
 }
-const get_device = (mqtt_name) => {
+const get_device = (devices, mqtt_name) => {
   let filtered_devices = devices.filter(
     (device) => device.mqtt_name == mqtt_name
   )
   return filtered_devices[0]
 }
-const delete_device = (mqtt_name) => {
-  let filtered_devices = devices.filter(
-    (device) => device.mqtt_name !== mqtt_name
-  )
+const get_device_by_id = (devices, id) => {
+  let filtered_devices = devices.filter((device) => device.id == id)
+  return filtered_devices[0]
+}
+const delete_device = (devices, id) => {
+  let filtered_devices = devices.filter((device) => device.id !== id)
   devices = filtered_devices
+  return devices
 }
 app.post('/smartIR', (req, res) => {
-  let current_device = get_device(req.query['device_name'])
+  let current_device = get_device(devices, req.query['device_name'])
   let btn_code = req.query['btn_code']
   if (current_device) {
     try {
@@ -199,104 +198,153 @@ app.post('/smartIR', (req, res) => {
     }
   }
 })
-app.post('/addDevice',(req, res) => {
- let arrived=req.body
- let result={Succes:false,msg:"ERROR"}
- let device={}
- const try_add_device=(device)=>{
-  if(get_device(device.mqtt_name)){
-    return {Succes:false,msg:"Device already exists!"}
-  }else{
-    devices.push(device)
-    init_device(device)
-    return {Succes:true,msg:"Device added with succes"}
+app.post('/tempIR', (req, res) => {
+  try {
+    tempIR = new TempIR(req.body.manufacter, req.body.mqtt_name)
+    tempDevices.push(tempIR)
+    subscribe_to_topic(tempIR.receive_topic)
+  } catch (error) {
+    console.log(error)
+    res.json({ Succes: false })
   }
- }
- switch (arrived.type) {
-  case "smartPlug" || "smartStrip":
-    device=new SmartStrip(arrived.name,arrived.iconUrl,arrived.manufacter,arrived.mqttName,arrived.groups.split(","),arrived.props.nr_of_sockets)
-    result=try_add_device(device)
-    break;
-  case "smartSwitch":
-    device=new SmartSwitch(arrived.name,arrived.iconUrl,arrived.manufacter,arrived.mqttName,arrived.groups.split(","),arrived.props.nr_of_sockets)
-    result=try_add_device(device)
-    break;
-  case "smartIR":
-  
-    break;
-  default:
-    result.Succes=false
-    result.msg="Error ocurred!"
-    break;
- }
- res.json(result)
+  res.json({ Succes: true })
 })
-app.post('/smartStrip', async (req, res) => {
-  let current_device = get_device(req.query['device_name'])
-  let req_type = req.query['req_type']
-  let plug_index = -1
-  for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
+app.post('/addDevice', (req, res) => {
+  let arrived = req.body
+  let result = { Succes: false, msg: 'ERROR' }
+  let device = {}
+  const try_add_device = (device) => {
     if (
-      current_device.cmnd_power_topics[i] ===
-      `cmnd/${current_device.mqtt_name}/${req_type}`
+      get_device(devices, device.mqtt_name) &&
+      device.device_type !== 'smartIR'
     ) {
-      plug_index = i
+      return { Succes: false, msg: 'Device already exists!' }
+    } else {
+      devices.push(device)
+      init_device(device)
+      return { Succes: true, msg: 'Device added with succes' }
     }
   }
-  await send_mqtt_cmnd(
-    `cmnd/${current_device.mqtt_name}/${req_type}`,
-    req.query['status']
-  )
-
-  res.json({ Power: `${current_device.power_status[plug_index]}` })
+  switch (arrived.type) {
+    case 'smartPlug':
+    case 'smartStrip':
+      device = new SmartStrip(
+        arrived.name,
+        arrived.iconUrl,
+        arrived.manufacter,
+        arrived.mqttName,
+        arrived.groups,
+        arrived.props.nr_of_sockets
+      )
+      result = try_add_device(device)
+      break
+    case 'smartSwitch':
+      device = new SmartSwitch(
+        arrived.name,
+        arrived.iconUrl,
+        arrived.manufacter,
+        arrived.mqttName,
+        arrived.groups,
+        arrived.props.nr_of_sockets
+      )
+      result = try_add_device(device)
+      break
+    case 'smartIR':
+      tempDevices = delete_device(tempDevices, arrived.id)
+      device = new SmartIR(
+        arrived.name,
+        arrived.iconUrl,
+        arrived.manufacter,
+        arrived.mqttName,
+        arrived.groups,
+        arrived.props
+      )
+      result = try_add_device(device)
+      break
+    default:
+      result.Succes = false
+      result.msg = 'Error ocurred!'
+      break
+  }
+  res.json(result)
 })
-app.get('/devices', (req, res) => {
-  const filter = decodeURIComponent(req.query['filter'])
-  if (filter !== '') {
-    res.json(filter_device_list(filter, devices))
-  } else {
-    res.json(devices)
+app.post('/updateDevice', (req, res) => {
+  let updatedDevice = req.body
+  let current_device = get_device_by_id(devices, updatedDevice.id)
+  try {
+    update_device(current_device, updatedDevice)
+    res.json({ Succes: true, msg: 'Device modified' })
+  } catch (error) {
+    res.json({ Succes: false, msg: 'Error.Try again' })
   }
 })
-app.get('/mqtt_groups', (req, res) => {
-  get_all_groups(mqtt_groups, devices)
-  res.json(mqtt_groups)
-})
-app.get('/deviceTypes',(req,res)=>{
-  res.json(AllTypes)
-})
-app.post('/deleteDevice', async (req, res) => {
-  let device_name = req.query['device_name']
-  if (device_name) {
-    await delete_device(device_name)
-    res.json(devices)
-  } else {
-    res.json(devices)
-  }
-})
-app.get('/smartStrip', async (req, res) => {
-  let current_device = get_device(req.query['device_name'])
+app.get('/smartStrip', (req, res) => {
+  let current_device = get_device(devices, req.query['device_name'])
   if (current_device) {
     let req_topic = req.query['req_topic']
-    let req_payload = req.query['req_payload']
     if (current_device.manufacter === 'openBeken') {
+      //TODO
     } else if (current_device.manufacter === 'tasmota') {
       if (req_topic === 'POWER') {
         for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
-          await send_mqtt_cmnd(current_device.cmnd_power_topics[i], req_payload)
+          current_device.change_power_state(mqtt_client, i + 1, '')
         }
       } else if (req_topic === 'STATUS') {
-        await send_mqtt_cmnd(
-          `cmnd/${current_device.mqtt_name}/${req_topic}`,
-          req_payload
-        )
+        current_device.send_sensor_req(mqtt_client)
       }
     }
   }
   res.json(current_device)
 })
+app.post('/smartStrip', async (req, res) => {
+  let current_device = get_device(devices, req.query['device_name'])
+  let socket_nr = req.query['socket_nr']
+  let status = req.query['status']
+  current_device.change_power_state(mqtt_client, socket_nr, status)
+  res.json({ Power: `${current_device.power_status[Number(socket_nr) - 1]}` })
+})
+app.get('/devices', (req, res) => {
+  const filter = decodeURIComponent(req.query['filter'])
+  if (filter !== '') {
+    res.json(filter_device_list(filter, devices))
+  } else if (filter === '' || filter === undefined) {
+    res.json(devices)
+  }
+})
+app.post('/device/setinterval', (req, res) => {
+  // let miliseconds = req.query['miliseconds']
+  // let state = req.query['state']
+  // let socket_nr = req.query['socket_nr']
+  // let current_device = get_device_by_id(devices, req.query['device_id'])
+  // current_device.change_on_interval(mqtt_client, miliseconds, socket_nr, state)
+  res.json({ Succes: true })
+})
+app.get('/device/:id', (req, res) => {
+  let current_device = get_device_by_id(devices, req.params['id'])
+  if (current_device) {
+    res.json(current_device)
+  } else {
+    res.json({ Succes: false, msg: "Device doesn't exist" })
+  }
+})
+app.get('/mqtt_groups', (req, res) => {
+  mqtt_groups = []
+  get_all_groups(mqtt_groups, devices)
+  res.json(mqtt_groups)
+})
+app.get('/deviceTypes', (req, res) => {
+  res.json(AllTypes)
+})
+app.post('/deleteDevice', async (req, res) => {
+  let device_id = req.query['device_id']
+  if (device_id) {
+    devices = delete_device(devices, device_id)
+    res.json(devices)
+  } else {
+    res.json(devices)
+  }
+})
 const send_mqtt_cmnd = (req_topic, req_payload) => {
-  console.log(req_topic,req_payload);
   mqtt_client.publish(
     `${req_topic}`,
     `${req_payload}`,
@@ -308,7 +356,7 @@ const send_mqtt_cmnd = (req_topic, req_payload) => {
     }
   )
 }
-const get_MAC_adress = (mqtt_name) => {
+const get_device_info = (mqtt_name) => {
   mqtt_client.publish(
     `cmnd/${mqtt_name}/STATUS`,
     `5`,
@@ -322,25 +370,25 @@ const get_MAC_adress = (mqtt_name) => {
 }
 mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
-  let current_device = get_device(buffer[1])
-  if (buffer[0] === 'stat') {
-    current_device = get_device(buffer[1])
-  } else {
-    current_device = get_device(buffer[0])
+  let current_device = get_device(tempDevices, buffer[0])
+  if (!current_device) {
+    if (buffer[0] === 'stat') {
+      current_device = get_device(devices, buffer[1])
+    } else {
+      current_device = get_device(devices, buffer[0])
+    }
   }
   try {
     if (current_device) {
-      if(current_device.device_type==='smartIR'){
-        current_device.received_code=payload.toString()
-        console.log(current_device.received_code);
+      if (current_device.device_type === 'tempIR') {
+        current_device.received_code = payload.toString()
         if (io) {
-          io.emit('update_smart_ir', {
+          io.emit('update_temp_ir', {
             mqtt_name: current_device.mqtt_name,
             received_code: current_device.received_code,
           })
         }
-      }
-      else if (
+      } else if (
         current_device.device_type === 'smartStrip' ||
         current_device.device_type === 'smartSwitch'
       ) {
@@ -358,7 +406,7 @@ mqtt_client.on('message', (topic, payload) => {
           }
         }
 
-        if (topic === current_device.sensor_topic) {
+        if (topic === current_device.stat_sensor_topic) {
           const temp = payload.toString()
           current_device.sensor_status = JSON.parse(temp)
         }
@@ -366,6 +414,7 @@ mqtt_client.on('message', (topic, payload) => {
           io.emit('update_smart_strip', {
             mqtt_name: current_device.mqtt_name,
             power_status: current_device.power_status,
+            sensor_status: current_device.sensor_status,
           })
         }
       }
