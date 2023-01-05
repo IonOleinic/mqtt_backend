@@ -21,6 +21,7 @@ class SmartSwitch extends Device {
       'MAC',
       'IP',
       false,
+      false,
       favorite
     )
     if (img === '') {

@@ -21,6 +21,7 @@ class SmartIR extends Device {
       'MAC',
       'IP',
       false,
+      false,
       favorite
     )
     if (img === '') {

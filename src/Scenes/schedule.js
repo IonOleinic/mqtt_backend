@@ -1,10 +1,15 @@
 const schedule = require('node-schedule')
 
 class Schedule {
-  constructor() {
+  constructor(device, dayOfWeek, hour, minute) {
     // this.startJob = undefined
     // this.endJob = undefined
-    this.id = Math.random().toString(4).slice(3)
+    this.device = device
+    this.dayOfWeek = dayOfWeek
+    this.hour = hour
+    this.minute = minute
+    this.id =
+      device.id + dayOfWeek.toString().replaceAll(',', '') + hour + minute
     this.active = true
     this.repeatedlyJob = undefined
   }
@@ -39,15 +44,48 @@ class Schedule {
   //     }
   //   })
   // }
-  repeatedly(func, dayOfWeek, hour, minute) {
+
+  repeatedly(func, actionText) {
+    const changeTimeZone = (date, timeZone) => {
+      if (typeof date === 'string') {
+        return new Date(
+          new Date(date).toLocaleString('ro-RO', {
+            timeZone,
+          })
+        )
+      }
+      return new Date(
+        date.toLocaleString('ro-RO', {
+          timeZone,
+        })
+      )
+    }
     if (this.repeatedlyJob) {
       this.repeatedlyJob.cancel(true)
     }
-    console.log(`Schedule planned for ${dayOfWeek}- ${hour}:${minute}`)
-    const rule = new schedule.RecurrenceRule()
-    rule.dayOfWeek = dayOfWeek
-    rule.hour = hour
-    rule.minute = minute
+    console.log(this.dayOfWeek)
+    const repeat = this.dayOfWeek[0] == -1 ? 'once' : this.dayOfWeek.toString()
+    console.log(
+      `Schedule planned for ${this.device.name} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${actionText}`
+    )
+    let rule = new schedule.RecurrenceRule()
+    if (this.dayOfWeek[0] == -1) {
+      const dateNow = new Date()
+      let date = new Date(
+        dateNow.getFullYear(),
+        dateNow.getMonth(),
+        dateNow.getDay(),
+        this.hour,
+        this.minute
+      )
+      rule = changeTimeZone(date, 'Europe/Bucharest')
+      console.log(this.hour)
+      console.log(date)
+    } else {
+      rule.dayOfWeek = this.dayOfWeek
+      rule.hour = this.hour
+      rule.minute = this.minute
+    }
     let isActive = this.active
     this.repeatedlyJob = schedule.scheduleJob(rule, function () {
       if (isActive) {

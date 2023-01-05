@@ -10,6 +10,7 @@ class Device {
     MAC,
     IP,
     battery,
+    read_only,
     favorite = false
   ) {
     this.favorite = favorite
@@ -25,6 +26,7 @@ class Device {
         ? 'https://cdn-icons-png.flaticon.com/512/2948/2948319.png'
         : img
     this.battery = battery
+    this.read_only = read_only
     this.mqtt_name = mqtt_name
     if (mqtt_group === '') {
       this.mqtt_group = []

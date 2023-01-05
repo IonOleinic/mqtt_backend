@@ -319,19 +319,20 @@ app.get('/schedules', (req, res) => {
 app.post('/schedule', (req, res) => {
   try {
     let current_device = get_object_by_id(devices, req.query['device_id'])
-    let schedule = new Schedule()
     const dayOfWeek = req.query['dayOfWeek'].split(',')
     const hour = req.query['hour']
     const minute = req.query['minute']
     const state = req.query['state']
     const socket_nr = req.query['socket_nr']
+    let schedule = new Schedule(current_device, dayOfWeek, hour, minute)
     const func = () => {
       current_device.change_power_state(mqtt_client, socket_nr, state)
     }
-    schedule.repeatedly(func, dayOfWeek, hour, minute)
+    schedule.repeatedly(func, `Power:${state}`)
     schedules.push(schedule)
     res.json({ Succes: true })
   } catch (error) {
+    console.log(error)
     res.json({ Succes: false })
   }
 })
