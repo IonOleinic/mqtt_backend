@@ -10,6 +10,7 @@ const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
 const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
+const Scene = require('./Scenes/scene.js')
 const Schedule = require('./Scenes/schedule.js')
 const DeviceType = {
   smartStrip: 'smartStrip',
@@ -49,7 +50,7 @@ const mqtt_port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const conectURL = `mqtt://${mqtt_host}:${mqtt_port}`
 
-let schedules = []
+let scenes = []
 let tempIR
 let devices = []
 let tempDevices = []
@@ -179,7 +180,7 @@ const get_device = (devices, mqtt_name) => {
   return filtered_devices[0]
 }
 const get_object_by_id = (array, id) => {
-  let filtered_array = array.filter((object) => object.id == id)
+  let filtered_array = array.filter((object) => object.id === id)
   return filtered_array[0]
 }
 const delete_device = (devices, id) => {
@@ -270,13 +271,14 @@ app.post('/addDevice', (req, res) => {
   }
   res.json(result)
 })
-app.post('/updateDevice', (req, res) => {
+app.put('/device/:id', (req, res) => {
   let updatedDevice = req.body
-  let current_device = get_object_by_id(devices, updatedDevice.id)
+  let current_device = get_object_by_id(devices, req.params['id'])
   try {
     update_device(current_device, updatedDevice)
     res.json({ Succes: true, msg: 'Device modified' })
   } catch (error) {
+    console.log(error)
     res.json({ Succes: false, msg: 'Error.Try again' })
   }
 })
@@ -313,8 +315,8 @@ app.get('/devices', (req, res) => {
     res.json(devices)
   }
 })
-app.get('/schedules', (req, res) => {
-  res.json(schedules)
+app.get('/scenes', (req, res) => {
+  res.json(scenes)
 })
 app.post('/schedule', (req, res) => {
   try {
@@ -324,12 +326,13 @@ app.post('/schedule', (req, res) => {
     const minute = req.query['minute']
     const state = req.query['state']
     const socket_nr = req.query['socket_nr']
-    let schedule = new Schedule(current_device, dayOfWeek, hour, minute)
+    const name = req.query['name']
+    let schedule = new Schedule(name, current_device, dayOfWeek, hour, minute)
     const func = () => {
       current_device.change_power_state(mqtt_client, socket_nr, state)
     }
     schedule.repeatedly(func, `Power:${state}`)
-    schedules.push(schedule)
+    scenes.push(schedule)
     res.json({ Succes: true })
   } catch (error) {
     console.log(error)
@@ -338,7 +341,7 @@ app.post('/schedule', (req, res) => {
 })
 app.put('/schedule', (req, res) => {
   try {
-    let current_schedule = get_object_by_id(schedules, req.query['schedule_id'])
+    let current_schedule = get_object_by_id(scenes, req.query['schedule_id'])
     let current_device = get_object_by_id(devices, req.query['device_id'])
     const dayOfWeek = req.query['dayOfWeek']
     const hour = req.query['hour']
@@ -354,18 +357,18 @@ app.put('/schedule', (req, res) => {
     res.json({ Succes: false })
   }
 })
-app.delete('/schedule/:id', (req, res) => {
+app.delete('/scene/:id', (req, res) => {
   try {
-    let current_schedule = get_object_by_id(schedules, req.query['schedule_id'])
+    let current_schedule = get_object_by_id(scenes, req.params['id'])
     current_schedule.delete()
     res.json({ Succes: true })
   } catch (error) {
     res.json({ Succes: false })
   }
 })
-app.get('/schedule/:id', (req, res) => {
+app.get('/scene/:id', (req, res) => {
   try {
-    let current_schedule = get_object_by_id(schedules, req.query['schedule_id'])
+    let current_schedule = get_object_by_id(scenes, req.query['schedule_id'])
     res.json(current_schedule)
   } catch (error) {
     res.json({ Succes: false, msg: "Schedule doesn't exist" })
@@ -387,8 +390,8 @@ app.get('/mqtt_groups', (req, res) => {
 app.get('/deviceTypes', (req, res) => {
   res.json(AllTypes)
 })
-app.post('/deleteDevice', async (req, res) => {
-  let device_id = req.query['device_id']
+app.delete('/device/:id', async (req, res) => {
+  let device_id = req.params['id']
   if (device_id) {
     devices = delete_device(devices, device_id)
     res.json(devices)
@@ -396,18 +399,6 @@ app.post('/deleteDevice', async (req, res) => {
     res.json(devices)
   }
 })
-const send_mqtt_cmnd = (req_topic, req_payload) => {
-  mqtt_client.publish(
-    `${req_topic}`,
-    `${req_payload}`,
-    { qos: 0, retain: false },
-    (error) => {
-      if (error) {
-        console.log(error)
-      }
-    }
-  )
-}
 const get_device_info = (mqtt_name) => {
   mqtt_client.publish(
     `cmnd/${mqtt_name}/STATUS`,
