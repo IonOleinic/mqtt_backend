@@ -74,7 +74,7 @@ let athom = new SmartSwitch(
 )
 
 let plug1 = new SmartStrip(
-  'priza 1',
+  'plug1',
   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
   'tasmota',
   'gosund_sp111_1',
@@ -111,6 +111,16 @@ devices.push(powerStrip)
 devices.push(plug2)
 devices.push(qiachip)
 devices.push(athom)
+
+const toJSON = (object) => {
+  var attrs = {}
+  for (var attr in object) {
+    if (typeof object[attr] != 'function') {
+      attrs[attr] = String(object[attr]) // force to string
+    }
+  }
+  return attrs
+}
 const get_all_groups = (mqtt_groups, devices) => {
   for (let i = 0; i < devices.length; i++) {
     for (let j = 0; j < devices[i].mqtt_group.length; j++) {
@@ -137,6 +147,12 @@ const update_device = (old_device, new_device) => {
   old_device.img = new_device.img
   old_device.manufacter = new_device.manufacter
   // old_device = JSON.parse(JSON.stringify(new_device))
+}
+const update_scene = (old_scene, new_scene) => {
+  old_scene.name = new_scene.name
+  old_scene.active = new_scene.active
+  old_scene.favorite = new_scene.favorite
+  old_scene.img = new_scene.img
 }
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
@@ -173,23 +189,37 @@ const subscribe_to_topic = (topic_to_subcribe) => {
     console.log(`Client subscried on ${topic_to_subcribe}`)
   })
 }
-const get_device = (devices, mqtt_name) => {
+const get_device_by_mqtt_name = (devices, mqtt_name) => {
   let filtered_devices = devices.filter(
     (device) => device.mqtt_name == mqtt_name
   )
   return filtered_devices[0]
 }
 const get_object_by_id = (array, id) => {
-  let filtered_array = array.filter((object) => object.id === id)
+  let filtered_array = array.filter((object) => object.id == id)
   return filtered_array[0]
 }
-const delete_device = (devices, id) => {
-  let filtered_devices = devices.filter((device) => device.id !== id)
-  devices = filtered_devices
-  return devices
+const delete_object = (list, object_id) => {
+  let filtered_devices = list.filter((device) => device.id != object_id)
+  list = filtered_devices
+  return list
+}
+const get_all_scenes = () => {
+  let result = []
+  for (let i = 0; i < scenes.length; i++) {
+    if (scenes[i].scene_type === 'schedule') {
+      result.push(toJSON(scenes[i]))
+    } else {
+      result.push(scenes[i])
+    }
+  }
+  return result
 }
 app.post('/smartIR', (req, res) => {
-  let current_device = get_device(devices, req.query['device_name'])
+  let current_device = get_device_by_mqtt_name(
+    devices,
+    req.query['device_name']
+  )
   let btn_code = req.query['btn_code']
   if (current_device) {
     try {
@@ -218,7 +248,7 @@ app.post('/addDevice', (req, res) => {
   let device = {}
   const try_add_device = (device) => {
     if (
-      get_device(devices, device.mqtt_name) &&
+      get_device_by_mqtt_name(devices, device.mqtt_name) &&
       device.device_type !== 'smartIR'
     ) {
       return { Succes: false, msg: 'Device already exists!' }
@@ -253,7 +283,7 @@ app.post('/addDevice', (req, res) => {
       result = try_add_device(device)
       break
     case 'smartIR':
-      tempDevices = delete_device(tempDevices, arrived.id)
+      tempDevices = delete_object(tempDevices, arrived.id)
       device = new SmartIR(
         arrived.name,
         arrived.iconUrl,
@@ -276,14 +306,17 @@ app.put('/device/:id', (req, res) => {
   let current_device = get_object_by_id(devices, req.params['id'])
   try {
     update_device(current_device, updatedDevice)
-    res.json({ Succes: true, msg: 'Device modified' })
+    res.json(current_device)
   } catch (error) {
     console.log(error)
-    res.json({ Succes: false, msg: 'Error.Try again' })
+    res.json(current_device)
   }
 })
 app.get('/smartStrip', (req, res) => {
-  let current_device = get_device(devices, req.query['device_name'])
+  let current_device = get_device_by_mqtt_name(
+    devices,
+    req.query['device_name']
+  )
   if (current_device) {
     let req_topic = req.query['req_topic']
     if (current_device.manufacter === 'openBeken') {
@@ -301,7 +334,10 @@ app.get('/smartStrip', (req, res) => {
   res.json(current_device)
 })
 app.post('/smartStrip', async (req, res) => {
-  let current_device = get_device(devices, req.query['device_name'])
+  let current_device = get_device_by_mqtt_name(
+    devices,
+    req.query['device_name']
+  )
   let socket_nr = req.query['socket_nr']
   let status = req.query['status']
   current_device.change_power_state(mqtt_client, socket_nr, status)
@@ -316,7 +352,7 @@ app.get('/devices', (req, res) => {
   }
 })
 app.get('/scenes', (req, res) => {
-  res.json(scenes)
+  res.json(get_all_scenes())
 })
 app.post('/schedule', (req, res) => {
   try {
@@ -329,7 +365,9 @@ app.post('/schedule', (req, res) => {
     const name = req.query['name']
     let schedule = new Schedule(name, current_device, dayOfWeek, hour, minute)
     const func = () => {
-      current_device.change_power_state(mqtt_client, socket_nr, state)
+      if (schedule.active) {
+        current_device.change_power_state(mqtt_client, socket_nr, state)
+      }
     }
     schedule.repeatedly(func, `Power:${state}`)
     scenes.push(schedule)
@@ -339,31 +377,25 @@ app.post('/schedule', (req, res) => {
     res.json({ Succes: false })
   }
 })
-app.put('/schedule', (req, res) => {
+app.put('/scene/:id', (req, res) => {
   try {
-    let current_schedule = get_object_by_id(scenes, req.query['schedule_id'])
-    let current_device = get_object_by_id(devices, req.query['device_id'])
-    const dayOfWeek = req.query['dayOfWeek']
-    const hour = req.query['hour']
-    const minute = req.query['minute']
-    const state = req.query['state']
-    const socket_nr = req.query['socket_nr']
-    const func = () => {
-      current_device.change_power_state(mqtt_client, socket_nr, state)
-    }
-    current_schedule.repeatedly(func, dayOfWeek, hour, minute)
-    res.json({ Succes: true })
+    let current_scene = get_object_by_id(scenes, req.params['id'])
+    let updatedScene = req.body
+    update_scene(current_scene, updatedScene)
+    res.json(toJSON(current_scene))
   } catch (error) {
-    res.json({ Succes: false })
+    res.json(toJSON(current_scene))
   }
 })
 app.delete('/scene/:id', (req, res) => {
   try {
-    let current_schedule = get_object_by_id(scenes, req.params['id'])
-    current_schedule.delete()
-    res.json({ Succes: true })
+    let current_scene = get_object_by_id(scenes, req.params['id'])
+    current_scene.delete()
+    scenes = delete_object(scenes, req.params['id'])
+    res.json(get_all_scenes())
   } catch (error) {
-    res.json({ Succes: false })
+    console.log(error)
+    res.json(get_all_scenes())
   }
 })
 app.get('/scene/:id', (req, res) => {
@@ -393,7 +425,7 @@ app.get('/deviceTypes', (req, res) => {
 app.delete('/device/:id', async (req, res) => {
   let device_id = req.params['id']
   if (device_id) {
-    devices = delete_device(devices, device_id)
+    devices = delete_object(devices, device_id)
     res.json(devices)
   } else {
     res.json(devices)
@@ -413,12 +445,12 @@ const get_device_info = (mqtt_name) => {
 }
 mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
-  let current_device = get_device(tempDevices, buffer[0])
+  let current_device = get_device_by_mqtt_name(tempDevices, buffer[0])
   if (!current_device) {
     if (buffer[0] === 'stat') {
-      current_device = get_device(devices, buffer[1])
+      current_device = get_device_by_mqtt_name(devices, buffer[1])
     } else {
-      current_device = get_device(devices, buffer[0])
+      current_device = get_device_by_mqtt_name(devices, buffer[0])
     }
   }
   try {

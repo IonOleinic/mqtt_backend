@@ -38,6 +38,7 @@ class Device {
     this.device_info_topic = `stat/${mqtt_name}/${device_info_topic}`
     this.MAC = MAC
     this.IP = IP
+    this.date = new Date()
   }
 }
 

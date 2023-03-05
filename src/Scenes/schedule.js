@@ -2,14 +2,19 @@ const schedule = require('node-schedule')
 const Scene = require('./scene')
 class Schedule extends Scene {
   constructor(name, device, dayOfWeek, hour, minute) {
-    super(name)
-    this.device = device
+    super(
+      name,
+      'schedule',
+      'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
+    )
+    this.device_id = device.id
+    this.device_name = device.name
+    this.device_img = device.img
     this.dayOfWeek = dayOfWeek
     this.hour = hour
     this.minute = minute
     this.job_id =
       device.id + dayOfWeek.toString().replaceAll(',', '') + hour + minute
-    this.active = true
     this.repeatedlyJob = undefined
   }
 
@@ -17,10 +22,10 @@ class Schedule extends Scene {
     if (this.repeatedlyJob) {
       this.repeatedlyJob.cancel(true)
     }
-    console.log(this.dayOfWeek)
+    this.actionText = actionText
     const repeat = this.dayOfWeek[0] === '' ? 'once' : this.dayOfWeek.toString()
     console.log(
-      `Schedule planned for ${this.device.name} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${actionText}`
+      `Schedule planned for ${this.device_name} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${actionText}`
     )
     let rule = new schedule.RecurrenceRule()
     if (this.dayOfWeek[0] === '') {
@@ -35,14 +40,11 @@ class Schedule extends Scene {
       rule.hour = this.hour
       rule.minute = this.minute
     }
-    let isActive = this.active
     this.repeatedlyJob = schedule.scheduleJob(rule, function () {
-      if (isActive) {
-        try {
-          func()
-        } catch (error) {
-          console.log(error)
-        }
+      try {
+        func()
+      } catch (error) {
+        console.log(error)
       }
     })
   }
