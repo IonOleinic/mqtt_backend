@@ -17,9 +17,6 @@ class SmartSwitch extends Device {
       mqtt_name,
       mqtt_group,
       'smartSwitch',
-      'STATUS5',
-      'MAC',
-      'IP',
       false,
       false,
       favorite
@@ -57,6 +54,16 @@ class SmartSwitch extends Device {
       this.power_status.push('OFF')
     }
   }
+  initDevice(mqtt_client) {
+    this.subscribe_for_device_info(mqtt_client)
+    for (let i = 0; i < this.stat_power_topics.length; i++) {
+      this.subscribeToTopic(mqtt_client, this.stat_power_topics[i])
+    }
+    if (this.stat_sensor_topic) {
+      this.subscribeToTopic(mqtt_client, this.stat_sensor_topic)
+    }
+    this.get_device_info(mqtt_client)
+  }
   change_power_state(mqtt_client, socket, state) {
     mqtt_client.publish(
       `cmnd/${this.mqtt_name}/POWER${socket}`,
@@ -68,6 +75,59 @@ class SmartSwitch extends Device {
         }
       }
     )
+  }
+  processIncomingMessage(topic, payload, io) {
+    this.processDeviceInfoMessage(topic, payload)
+    for (let i = 0; i < this.stat_power_topics.length; i++) {
+      if (topic === this.stat_power_topics[i]) {
+        if (this.manufacter === 'openBeken') {
+          if (payload.toString() === '1') {
+            this.power_status[i] = 'ON'
+          } else if (payload.toString() === '0') {
+            this.power_status[i] = 'OFF'
+          }
+        } else if (this.manufacter === 'tasmota') {
+          this.power_status[i] = payload.toString()
+        }
+      }
+    }
+    if (topic === this.stat_sensor_topic) {
+      const temp = payload.toString()
+      this.sensor_status = JSON.parse(temp)
+    } else if (topic === this.device_info_topic) {
+      const temp = JSON.parse(payload.toString())
+      this.MAC = temp.StatusNET.Mac
+      this.IP = temp.StatusNET.IPAddress
+    }
+    if (io) {
+      io.emit('update_smart_strip', {
+        mqtt_name: this.mqtt_name,
+        power_status: this.power_status,
+        sensor_status: this.sensor_status,
+      })
+    }
+  }
+  update_req(mqtt_client, req_topic) {
+    if (this.manufacter === 'openBeken') {
+      //TODO
+    } else if (this.manufacter === 'tasmota') {
+      if (req_topic === 'POWER') {
+        for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+          this.change_power_state(mqtt_client, i + 1, '')
+        }
+      } else if (req_topic === 'STATUS') {
+        mqtt_client.publish(
+          `cmnd/${this.mqtt_name}/STATUS`,
+          `8`,
+          { qos: 0, retain: false },
+          (error) => {
+            if (error) {
+              console.log(error)
+            }
+          }
+        )
+      }
+    }
   }
 }
 module.exports = SmartSwitch

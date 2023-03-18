@@ -17,9 +17,6 @@ class SmartIR extends Device {
       mqtt_name,
       mqtt_group,
       'smartIR',
-      'STATUS5',
-      'MAC',
-      'IP',
       false,
       false,
       favorite
@@ -28,10 +25,14 @@ class SmartIR extends Device {
       this.img =
         'https://www.expert4house.com/1281-large_default/tuya-smart-ir-rf-control-wifi-universal.jpg'
     }
-    this.receive_topic = `${mqtt_name}/ir/get`
+    if (this.manufacter == 'tasmota') {
+      //TODO
+    } else if (this.manufacter == 'openBeken') {
+      this.receive_topic = `${mqtt_name}/ir/get`
+      this.cmnd_topic = `cmnd/${mqtt_name}/IRSend`
+    }
     this.repeats = '1'
     this.bits = PRESET.bits
-    this.cmnd_topic = `cmnd/${mqtt_name}/IRSend`
     this.IR_protocol = PRESET.protocol
     this.buttons = {}
     if (PRESET.buttons) {
@@ -39,6 +40,11 @@ class SmartIR extends Device {
         this.buttons[`${PRESET.buttons[i].name}`] = PRESET.buttons[i].code
       }
     }
+  }
+  initDevice(mqtt_client) {
+    this.subscribe_for_device_info(mqtt_client)
+    this.subscribeToTopic(mqtt_client, this.receive_topic)
+    this.get_device_info(mqtt_client)
   }
   pressButton(client, btn_code) {
     if (btn_code) {
@@ -53,6 +59,9 @@ class SmartIR extends Device {
         }
       )
     }
+  }
+  processIncomingMessage(topic, payload, io) {
+    this.processDeviceInfoMessage(topic, payload)
   }
 }
 module.exports = SmartIR

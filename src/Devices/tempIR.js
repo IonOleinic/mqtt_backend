@@ -9,5 +9,14 @@ class TempIR {
     this.received_code = ''
     this.mqtt_name = mqtt_name
   }
+  processIncomingMessage(topic, payload, io) {
+    current_device.received_code = payload.toString()
+    if (io) {
+      io.emit('update_temp_ir', {
+        mqtt_name: current_device.mqtt_name,
+        received_code: current_device.received_code,
+      })
+    }
+  }
 }
 module.exports = TempIR

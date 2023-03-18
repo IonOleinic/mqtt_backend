@@ -8,9 +8,9 @@ const { Server } = require('socket.io')
 const SmartStrip = require('./Devices/smartStrip.js')
 const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
+const SmartTempSensor = require('./Devices/smartTempSensor.js')
 const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
-const Scene = require('./Scenes/scene.js')
 const Schedule = require('./Scenes/schedule.js')
 const DeviceType = {
   smartStrip: 'smartStrip',
@@ -105,12 +105,34 @@ let aubess_ir = new SmartIR(
   '',
   new Horizon_IR()
 )
+let temp_hum1 = new SmartTempSensor(
+  'Temp&Hum Sensor',
+  '',
+  'openBeken',
+  'temp_hum1',
+  ''
+)
 devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
 devices.push(plug2)
 devices.push(qiachip)
 devices.push(athom)
+devices.push(temp_hum1)
+
+const mqtt_client = mqtt.connect(conectURL, {
+  clientId,
+  clean: true,
+  connectTimeout: 4000,
+  username: 'mqtt',
+  password: 'tasmota',
+  reconnectPeriod: 1000,
+})
+mqtt_client.on('connect', () => {
+  for (let i = 0; i < devices.length; i++) {
+    devices[i].initDevice(mqtt_client)
+  }
+})
 
 const toJSON = (object) => {
   var attrs = {}
@@ -153,36 +175,6 @@ const update_scene = (old_scene, new_scene) => {
   old_scene.active = new_scene.active
   old_scene.favorite = new_scene.favorite
   old_scene.img = new_scene.img
-}
-const mqtt_client = mqtt.connect(conectURL, {
-  clientId,
-  clean: true,
-  connectTimeout: 4000,
-  username: 'mqtt',
-  password: 'tasmota',
-  reconnectPeriod: 1000,
-})
-mqtt_client.on('connect', () => {
-  for (let i = 0; i < devices.length; i += 1) {
-    init_device(devices[i])
-  }
-})
-const init_device = (device) => {
-  if (device.device_type === 'smartIR') {
-    subscribe_to_topic(device.receive_topic)
-  } else if (
-    device.device_type === 'smartStrip' ||
-    device.device_type === 'smartSwitch'
-  ) {
-    for (let i = 0; i < device.stat_power_topics.length; i++) {
-      subscribe_to_topic(device.stat_power_topics[i])
-    }
-    if (device.stat_sensor_topic) {
-      subscribe_to_topic(device.stat_sensor_topic)
-    }
-  }
-  subscribe_to_topic(device.device_info_topic)
-  get_device_info(device.mqtt_name)
 }
 const subscribe_to_topic = (topic_to_subcribe) => {
   mqtt_client.subscribe(`${topic_to_subcribe}`, () => {
@@ -254,7 +246,7 @@ app.post('/addDevice', (req, res) => {
       return { Succes: false, msg: 'Device already exists!' }
     } else {
       devices.push(device)
-      init_device(device)
+      device.initDevice(mqtt_client)
       return { Succes: true, msg: 'Device added with succes' }
     }
   }
@@ -318,18 +310,7 @@ app.get('/smartStrip', (req, res) => {
     req.query['device_name']
   )
   if (current_device) {
-    let req_topic = req.query['req_topic']
-    if (current_device.manufacter === 'openBeken') {
-      //TODO
-    } else if (current_device.manufacter === 'tasmota') {
-      if (req_topic === 'POWER') {
-        for (let i = 0; i < current_device.cmnd_power_topics.length; i++) {
-          current_device.change_power_state(mqtt_client, i + 1, '')
-        }
-      } else if (req_topic === 'STATUS') {
-        current_device.send_sensor_req(mqtt_client)
-      }
-    }
+    current_device.update_req(mqtt_client, req.query['req_topic'])
   }
   res.json(current_device)
 })
@@ -431,18 +412,6 @@ app.delete('/device/:id', async (req, res) => {
     res.json(devices)
   }
 })
-const get_device_info = (mqtt_name) => {
-  mqtt_client.publish(
-    `cmnd/${mqtt_name}/STATUS`,
-    `5`,
-    { qos: 0, retain: false },
-    (error) => {
-      if (error) {
-        console.log(error)
-      }
-    }
-  )
-}
 mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
   let current_device = get_device_by_mqtt_name(tempDevices, buffer[0])
@@ -455,49 +424,7 @@ mqtt_client.on('message', (topic, payload) => {
   }
   try {
     if (current_device) {
-      if (current_device.device_type === 'tempIR') {
-        current_device.received_code = payload.toString()
-        if (io) {
-          io.emit('update_temp_ir', {
-            mqtt_name: current_device.mqtt_name,
-            received_code: current_device.received_code,
-          })
-        }
-      } else if (
-        current_device.device_type === 'smartStrip' ||
-        current_device.device_type === 'smartSwitch'
-      ) {
-        for (let i = 0; i < current_device.stat_power_topics.length; i++) {
-          if (topic === current_device.stat_power_topics[i]) {
-            if (current_device.manufacter === 'openBeken') {
-              if (payload.toString() === '1') {
-                current_device.power_status[i] = 'ON'
-              } else if (payload.toString() === '0') {
-                current_device.power_status[i] = 'OFF'
-              }
-            } else if (current_device.manufacter === 'tasmota') {
-              current_device.power_status[i] = payload.toString()
-            }
-          }
-        }
-
-        if (topic === current_device.stat_sensor_topic) {
-          const temp = payload.toString()
-          current_device.sensor_status = JSON.parse(temp)
-        }
-        if (io) {
-          io.emit('update_smart_strip', {
-            mqtt_name: current_device.mqtt_name,
-            power_status: current_device.power_status,
-            sensor_status: current_device.sensor_status,
-          })
-        }
-      }
-      if (topic === current_device.device_info_topic) {
-        const temp = JSON.parse(payload.toString())
-        current_device.MAC = temp.StatusNET.Mac
-        current_device.IP = temp.StatusNET.IPAddress
-      }
+      current_device.processIncomingMessage(topic, payload, io)
     }
   } catch (error) {
     console.log(error)
