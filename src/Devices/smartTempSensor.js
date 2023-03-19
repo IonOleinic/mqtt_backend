@@ -47,6 +47,14 @@ class SmartTempSensor extends Device {
       this.MAC = temp.StatusNET.Mac
       this.IP = temp.StatusNET.IPAddress
     }
+    if (io) {
+      io.emit('update_smart_temp_sensor', {
+        mqtt_name: this.mqtt_name,
+        temperature: this.temperature,
+        humidity: this.humidity,
+        battery_level: this.battery_level,
+      })
+    }
   }
 }
 module.exports = SmartTempSensor

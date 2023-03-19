@@ -133,7 +133,6 @@ mqtt_client.on('connect', () => {
     devices[i].initDevice(mqtt_client)
   }
 })
-
 const toJSON = (object) => {
   var attrs = {}
   for (var attr in object) {

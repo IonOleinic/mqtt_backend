@@ -12,7 +12,7 @@ class Device {
     this.favorite = false
     this.id = Math.random().toString(16).slice(3)
     if (name === '') {
-      this.name = 'Device' + Math.random().toString(4).slice(4, 7)
+      this.name = 'Device ' + Math.random().toString(4).slice(4, 7)
     } else {
       this.name = name
     }
@@ -36,8 +36,8 @@ class Device {
     } else if (manufacter == 'openBeken') {
       this.device_info_topic = undefined
     }
-    this.MAC = 'MAC'
-    this.IP = 'IP'
+    this.MAC = 'UNKNOWN'
+    this.IP = 'UNKNOWN'
     this.date = new Date()
   }
   subscribe_for_device_info(mqtt_client) {
