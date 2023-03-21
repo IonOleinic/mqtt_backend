@@ -1,15 +1,7 @@
 const Device = require('./device')
 
 class SmartSwitch extends Device {
-  constructor(
-    name,
-    img,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    nr_of_sockets,
-    favorite = false
-  ) {
+  constructor(name, img, manufacter, mqtt_name, mqtt_group, nr_of_sockets) {
     super(
       name,
       img,
@@ -18,8 +10,7 @@ class SmartSwitch extends Device {
       mqtt_group,
       'smartSwitch',
       false,
-      false,
-      favorite
+      false
     )
     if (img === '') {
       if (nr_of_sockets == 1) {
@@ -63,6 +54,7 @@ class SmartSwitch extends Device {
       this.subscribeToTopic(mqtt_client, this.stat_sensor_topic)
     }
     this.get_device_info(mqtt_client)
+    this.get_initial_state(mqtt_client)
   }
   change_power_state(mqtt_client, socket, state) {
     mqtt_client.publish(
@@ -75,6 +67,17 @@ class SmartSwitch extends Device {
         }
       }
     )
+  }
+  get_initial_state(mqtt_client) {
+    if (this.manufacter === 'openBeken') {
+      for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/set`, '')
+      }
+    } else if (this.manufacter === 'tasmota') {
+      for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+        this.change_power_state(mqtt_client, i + 1, '')
+      }
+    }
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
@@ -90,14 +93,6 @@ class SmartSwitch extends Device {
           this.power_status[i] = payload.toString()
         }
       }
-    }
-    if (topic === this.stat_sensor_topic) {
-      const temp = payload.toString()
-      this.sensor_status = JSON.parse(temp)
-    } else if (topic === this.device_info_topic) {
-      const temp = JSON.parse(payload.toString())
-      this.MAC = temp.StatusNET.Mac
-      this.IP = temp.StatusNET.IPAddress
     }
     if (io) {
       io.emit('update_smart_strip', {

@@ -1,26 +1,8 @@
 const Device = require('./device')
 
 class SmartIR extends Device {
-  constructor(
-    name,
-    img,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    PRESET,
-    favorite = false
-  ) {
-    super(
-      name,
-      img,
-      manufacter,
-      mqtt_name,
-      mqtt_group,
-      'smartIR',
-      false,
-      false,
-      favorite
-    )
+  constructor(name, img, manufacter, mqtt_name, mqtt_group, PRESET) {
+    super(name, img, manufacter, mqtt_name, mqtt_group, 'smartIR', false, false)
     if (img === '') {
       this.img =
         'https://www.expert4house.com/1281-large_default/tuya-smart-ir-rf-control-wifi-universal.jpg'

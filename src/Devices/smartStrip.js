@@ -1,15 +1,7 @@
 const Device = require('./device')
 
 class SmartStrip extends Device {
-  constructor(
-    name,
-    img,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    nr_of_sockets,
-    favorite = false
-  ) {
+  constructor(name, img, manufacter, mqtt_name, mqtt_group, nr_of_sockets) {
     super(
       name,
       img,
@@ -18,8 +10,7 @@ class SmartStrip extends Device {
       mqtt_group,
       'smartStrip',
       false,
-      false,
-      favorite
+      false
     )
     if (img === '') {
       if (nr_of_sockets == 1) {
@@ -96,28 +87,30 @@ class SmartStrip extends Device {
       this.subscribeToTopic(mqtt_client, this.stat_sensor_topic)
     }
     this.get_device_info(mqtt_client)
+    this.get_initial_state(mqtt_client)
   }
   update_req(mqtt_client, req_topic) {
     if (this.manufacter === 'openBeken') {
-      //TODO
+      if (req_topic === 'POWER') {
+        for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+          this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/set`, '')
+        }
+      } else if (req_topic === 'STATUS') {
+        //TODO
+      }
     } else if (this.manufacter === 'tasmota') {
       if (req_topic === 'POWER') {
         for (let i = 0; i < this.cmnd_power_topics.length; i++) {
           this.change_power_state(mqtt_client, i + 1, '')
         }
       } else if (req_topic === 'STATUS') {
-        mqtt_client.publish(
-          `cmnd/${this.mqtt_name}/STATUS`,
-          `8`,
-          { qos: 0, retain: false },
-          (error) => {
-            if (error) {
-              console.log(error)
-            }
-          }
-        )
+        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/STATUS`, '8')
       }
     }
+  }
+  get_initial_state(mqtt_client) {
+    this.update_req(mqtt_client, 'POWER')
+    this.update_req(mqtt_client, 'STATE')
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
@@ -137,10 +130,6 @@ class SmartStrip extends Device {
     if (topic === this.stat_sensor_topic) {
       const temp = payload.toString()
       this.sensor_status = JSON.parse(temp)
-    } else if (topic === this.device_info_topic) {
-      const temp = JSON.parse(payload.toString())
-      this.MAC = temp.StatusNET.Mac
-      this.IP = temp.StatusNET.IPAddress
     }
     if (io) {
       io.emit('update_smart_strip', {

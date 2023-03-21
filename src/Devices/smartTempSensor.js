@@ -33,6 +33,12 @@ class SmartTempSensor extends Device {
     this.subscribeToTopic(mqtt_client, this.receive_hum_topic)
     this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
     this.get_device_info(mqtt_client)
+    this.get_initial_state(mqtt_client)
+  }
+  get_initial_state(mqtt_client) {
+    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, '')
+    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/2/set`, '')
+    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/3/set`, '')
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
@@ -42,10 +48,6 @@ class SmartTempSensor extends Device {
       this.humidity = Number(payload.toString())
     } else if (topic === this.receive_batt_topic) {
       this.battery_level = Number(payload.toString())
-    } else if (topic === this.device_info_topic) {
-      const temp = JSON.parse(payload.toString())
-      this.MAC = temp.StatusNET.Mac
-      this.IP = temp.StatusNET.IPAddress
     }
     if (io) {
       io.emit('update_smart_temp_sensor', {

@@ -9,19 +9,21 @@ const SmartStrip = require('./Devices/smartStrip.js')
 const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
 const SmartTempSensor = require('./Devices/smartTempSensor.js')
+const SmartDoorSensor = require('./Devices/smartDoorSensor.js')
 const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
-const DeviceType = {
-  smartStrip: 'smartStrip',
-  smartPlug: 'smartStrip',
-  smartSwitch: 'smartStrip',
-  smartIR: 'smartIR',
-  smartDoorSensor: 'smartDoorSensor',
-  smartTempSensor: 'smartTempSensor',
-  smartMotionSensor: 'smartTempSensor',
+
+const DeviceTypes = {
+  'Smart Strip': 'smartStrip',
+  'Smart Plug': 'smartStrip',
+  'Smart Switch': 'smartSwitch',
+  'Smart IR': 'smartIR',
+  'Smart Door Sensor': 'smartDoorSensor',
+  'Smart Temp&Hum Sensor': 'smartTempSensor',
+  'Smart Motion Sensor': 'smartTempSensor',
 }
-const AllTypes = Object.keys(DeviceType)
+
 const FrontURL = 'http://192.168.0.108:3000'
 const FrontPort = 3000
 
@@ -44,8 +46,9 @@ io.on('connection', (socket) => {
     console.log(`Connected clients: ${io.engine.clientsCount}`)
   })
 })
-const mqtt_host = '192.168.0.108'
+// const mqtt_host = '192.168.0.108'
 // const mqtt_host = 'broker.emqx.io'
+const mqtt_host = '80.96.122.192'
 const mqtt_port = '1883'
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const conectURL = `mqtt://${mqtt_host}:${mqtt_port}`
@@ -112,6 +115,13 @@ let temp_hum1 = new SmartTempSensor(
   'temp_hum1',
   ''
 )
+let door_sensor1 = new SmartDoorSensor(
+  'Door&Window Sensor',
+  '',
+  'tasmota',
+  'door_sensor1',
+  ''
+)
 devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
@@ -119,6 +129,7 @@ devices.push(plug2)
 devices.push(qiachip)
 devices.push(athom)
 devices.push(temp_hum1)
+devices.push(door_sensor1)
 
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
@@ -400,7 +411,7 @@ app.get('/mqtt_groups', (req, res) => {
   res.json(mqtt_groups)
 })
 app.get('/deviceTypes', (req, res) => {
-  res.json(AllTypes)
+  res.json(DeviceTypes)
 })
 app.delete('/device/:id', async (req, res) => {
   let device_id = req.params['id']

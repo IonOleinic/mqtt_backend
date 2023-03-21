@@ -84,6 +84,13 @@ class Device {
       }
     }
   }
+  send_mqtt_req(mqtt_client, topic, payload) {
+    mqtt_client.publish(topic, payload, { qos: 0, retain: false }, (error) => {
+      if (error) {
+        console.log(error)
+      }
+    })
+  }
 }
 
 module.exports = Device
