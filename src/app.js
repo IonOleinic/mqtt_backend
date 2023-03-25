@@ -10,6 +10,7 @@ const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
 const SmartTempSensor = require('./Devices/smartTempSensor.js')
 const SmartDoorSensor = require('./Devices/smartDoorSensor.js')
+const SmartSirenAlarm = require('./Devices/smartSirenAlarm.js')
 const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
@@ -21,11 +22,12 @@ const DeviceTypes = {
   'Smart IR': 'smartIR',
   'Smart Door Sensor': 'smartDoorSensor',
   'Smart Temp&Hum Sensor': 'smartTempSensor',
-  'Smart Motion Sensor': 'smartTempSensor',
+  'Smart Motion Sensor': 'smartMotionSensor',
+  'Smart Siren Alarm': 'smartSirenAlarm',
 }
 
-const FrontURL = 'http://192.168.0.108:3000'
-const FrontPort = 3000
+// const FrontURL = 'localhost:3000'
+// const FrontPort = 3000
 
 app.use(cors())
 app.use(bodyParser.json())
@@ -122,6 +124,13 @@ let door_sensor1 = new SmartDoorSensor(
   'door_sensor1',
   ''
 )
+let siren_alarm1 = new SmartSirenAlarm(
+  'Tuya Siren',
+  '',
+  'openBeken',
+  'tuya_siren1',
+  ''
+)
 devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
@@ -130,6 +139,7 @@ devices.push(qiachip)
 devices.push(athom)
 devices.push(temp_hum1)
 devices.push(door_sensor1)
+devices.push(siren_alarm1)
 
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
@@ -222,10 +232,9 @@ app.post('/smartIR', (req, res) => {
     devices,
     req.query['device_name']
   )
-  let btn_code = req.query['btn_code']
   if (current_device) {
     try {
-      current_device.pressButton(mqtt_client, btn_code)
+      current_device.pressButton(mqtt_client, req.query['btn_code'])
       res.json({ Succes: true })
     } catch (error) {
       console.log(error)
@@ -324,15 +333,54 @@ app.get('/smartStrip', (req, res) => {
   }
   res.json(current_device)
 })
+app.post('/smartDoorSensor', (req, res) => {
+  let current_device = get_device_by_mqtt_name(
+    devices,
+    req.query['device_name']
+  )
+  if (current_device) {
+    current_device.send_toggle_req(mqtt_client)
+  }
+  res.json(current_device)
+})
 app.post('/smartStrip', async (req, res) => {
   let current_device = get_device_by_mqtt_name(
     devices,
     req.query['device_name']
   )
-  let socket_nr = req.query['socket_nr']
-  let status = req.query['status']
-  current_device.change_power_state(mqtt_client, socket_nr, status)
-  res.json({ Power: `${current_device.power_status[Number(socket_nr) - 1]}` })
+  current_device.change_power_state(
+    mqtt_client,
+    req.query['socket_nr'],
+    req.query['status']
+  )
+  res.json({
+    Power: `${current_device.power_status[Number(req.query['socket_nr']) - 1]}`,
+  })
+})
+app.post('/smartSirenAlarm', async (req, res) => {
+  let current_device = get_device_by_mqtt_name(
+    devices,
+    req.query['device_name']
+  )
+  current_device.change_power_state(mqtt_client, req.query['status'])
+  res.json({
+    Power: `${current_device.status}`,
+  })
+})
+app.post('/updateOptionsSirenAlarm', async (req, res) => {
+  let current_device = get_device_by_mqtt_name(
+    devices,
+    req.query['device_name']
+  )
+  current_device.update_options(
+    mqtt_client,
+    req.query['new_sound'],
+    req.query['new_volume'],
+    req.query['new_duration']
+  )
+  res.json({
+    Succes: true,
+  })
 })
 app.get('/devices', (req, res) => {
   const filter = decodeURIComponent(req.query['filter'])

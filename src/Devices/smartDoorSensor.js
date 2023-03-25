@@ -34,9 +34,16 @@ class SmartDoorSensor extends Device {
   }
   get_initial_state(mqtt_client) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`)
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
     } else {
       this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, '')
+    }
+  }
+  send_toggle_req(mqtt_client) {
+    if (this.manufacter == 'tasmota') {
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
+    } else {
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, 'TOGGLE')
     }
   }
   processIncomingMessage(topic, payload, io) {
