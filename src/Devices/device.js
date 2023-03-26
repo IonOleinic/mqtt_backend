@@ -31,18 +31,14 @@ class Device {
     }
     this.mqtt_group.splice(0, 0, 'General')
     this.device_type = device_type
-    if (manufacter == 'tasmota') {
-      this.device_info_topic = `stat/${mqtt_name}/STATUS5`
-    } else if (manufacter == 'openBeken') {
-      this.device_info_topic = undefined
-    }
+
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
     this.date = new Date()
   }
   subscribe_for_device_info(mqtt_client) {
     if (this.manufacter == 'tasmota') {
-      this.subscribeToTopic(mqtt_client, this.device_info_topic)
+      this.subscribeToTopic(mqtt_client, `stat/${this.mqtt_name}/STATUS5`)
     } else if (this.manufacter == 'openBeken') {
       this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/ip`)
       this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/mac`)

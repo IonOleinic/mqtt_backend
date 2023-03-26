@@ -46,7 +46,7 @@ class SmartSirenAlarm extends Device {
     this.subscribeToTopic(mqtt_client, this.receive_sound_duration_topic)
     this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
     this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
+    //this.get_initial_state(mqtt_client)
   }
   update_options(mqtt_client, new_sound, new_volume, new_duration) {
     this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/set`, new_sound)
@@ -60,11 +60,12 @@ class SmartSirenAlarm extends Device {
       this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, '')
     }
   }
-  change_power_state(mqtt_client, status) {
+  change_power_state(mqtt_client, socket_nr = 1, status) {
     if (this.manufacter == 'tasmota') {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, status)
     } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, status)
+      // this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, status)
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, status)
     }
   }
   processIncomingMessage(topic, payload, io) {
@@ -76,8 +77,7 @@ class SmartSirenAlarm extends Device {
       } else if (value == '0') {
         this.status = 'OFF'
       }
-    }
-    if (topic === this.receive_temp_topic) {
+    } else if (topic === this.receive_temp_topic) {
       this.temperature = Number(payload.toString()) / 10
     } else if (topic === this.receive_hum_topic) {
       this.humidity = Number(payload.toString())
@@ -90,16 +90,10 @@ class SmartSirenAlarm extends Device {
     } else if (topic === this.receive_batt_topic) {
       this.battery_level = Number(payload.toString())
     }
+
     if (io) {
-      io.emit('update_smart_alarm_siren', {
-        mqtt_name: this.mqtt_name,
-        status: this.status,
-        temperature: this.temperature,
-        humidity: this.humidity,
-        sound: this.sound,
-        volume: this.volume,
-        sound_duration: this.sound_duration,
-        battery_level: this.battery_level,
+      io.emit('update_device', {
+        device: this,
       })
     }
   }

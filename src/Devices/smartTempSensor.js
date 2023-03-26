@@ -50,11 +50,8 @@ class SmartTempSensor extends Device {
       this.battery_level = Number(payload.toString())
     }
     if (io) {
-      io.emit('update_smart_temp_sensor', {
-        mqtt_name: this.mqtt_name,
-        temperature: this.temperature,
-        humidity: this.humidity,
-        battery_level: this.battery_level,
+      io.emit('update_device', {
+        device: this,
       })
     }
   }

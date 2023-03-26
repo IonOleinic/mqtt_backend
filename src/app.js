@@ -362,7 +362,7 @@ app.post('/smartSirenAlarm', async (req, res) => {
     devices,
     req.query['device_name']
   )
-  current_device.change_power_state(mqtt_client, req.query['status'])
+  current_device.change_power_state(mqtt_client, 1, req.query['status'])
   res.json({
     Power: `${current_device.status}`,
   })

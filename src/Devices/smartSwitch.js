@@ -95,10 +95,8 @@ class SmartSwitch extends Device {
       }
     }
     if (io) {
-      io.emit('update_smart_strip', {
-        mqtt_name: this.mqtt_name,
-        power_status: this.power_status,
-        sensor_status: this.sensor_status,
+      io.emit('update_device', {
+        device: this,
       })
     }
   }
