@@ -57,21 +57,16 @@ class SmartSwitch extends Device {
     this.get_initial_state(mqtt_client)
   }
   change_power_state(mqtt_client, socket, state) {
-    mqtt_client.publish(
+    this.send_mqtt_req(
+      mqtt_client,
       `cmnd/${this.mqtt_name}/POWER${socket}`,
-      `${state}`,
-      { qos: 0, retain: false },
-      (error) => {
-        if (error) {
-          console.log(error)
-        }
-      }
+      state
     )
   }
   get_initial_state(mqtt_client) {
     if (this.manufacter === 'openBeken') {
       for (let i = 0; i < this.cmnd_power_topics.length; i++) {
-        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/set`, '')
+        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/get`, '')
       }
     } else if (this.manufacter === 'tasmota') {
       for (let i = 0; i < this.cmnd_power_topics.length; i++) {
@@ -98,28 +93,6 @@ class SmartSwitch extends Device {
       io.emit('update_device', {
         device: this,
       })
-    }
-  }
-  update_req(mqtt_client, req_topic) {
-    if (this.manufacter === 'openBeken') {
-      //TODO
-    } else if (this.manufacter === 'tasmota') {
-      if (req_topic === 'POWER') {
-        for (let i = 0; i < this.cmnd_power_topics.length; i++) {
-          this.change_power_state(mqtt_client, i + 1, '')
-        }
-      } else if (req_topic === 'STATUS') {
-        mqtt_client.publish(
-          `cmnd/${this.mqtt_name}/STATUS`,
-          `8`,
-          { qos: 0, retain: false },
-          (error) => {
-            if (error) {
-              console.log(error)
-            }
-          }
-        )
-      }
     }
   }
 }

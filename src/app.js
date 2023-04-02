@@ -14,6 +14,7 @@ const SmartSirenAlarm = require('./Devices/smartSirenAlarm.js')
 const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
+const DeviceScene = require('./Scenes/deviceScene.js')
 
 const DeviceTypes = {
   'Smart Strip': 'smartStrip',
@@ -52,7 +53,7 @@ io.on('connection', (socket) => {
 // const mqtt_host = 'broker.emqx.io'
 const mqtt_host = '80.96.122.192'
 const mqtt_port = '1883'
-const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
+const clientId = `mqtt_${Math.random().toString(20).slice(3)}`
 const conectURL = `mqtt://${mqtt_host}:${mqtt_port}`
 
 let scenes = []
@@ -141,6 +142,42 @@ devices.push(temp_hum1)
 devices.push(door_sensor1)
 devices.push(siren_alarm1)
 
+deviceScene1 = new DeviceScene(
+  'Scene 1',
+  door_sensor1.id,
+  siren_alarm1.id,
+  door_sensor1.receive_status_topic,
+  'ON',
+  siren_alarm1.cmnd_status_topic,
+  'ON',
+  'Opened',
+  'Power ON'
+)
+deviceScene2 = new DeviceScene(
+  'Scene 2',
+  door_sensor1.id,
+  siren_alarm1.id,
+  door_sensor1.receive_status_topic,
+  'OFF',
+  siren_alarm1.cmnd_status_topic,
+  'OFF',
+  'Closed',
+  'Power OFF'
+)
+scenes.push(deviceScene1)
+scenes.push(deviceScene2)
+
+const check_if_in_scene = (device, scenes, topic, payload) => {
+  for (let i = 0; i < scenes.length; i++) {
+    if (device.id == scenes[i].cond_device_id) {
+      if (scenes[i].conditional_topic == topic) {
+        if (scenes[i].conditional_payload == payload) {
+          scenes[i].execute(mqtt_client)
+        }
+      }
+    }
+  }
+}
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
   clean: true,
@@ -416,11 +453,34 @@ app.post('/schedule', (req, res) => {
     res.json({ Succes: false })
   }
 })
+app.post('/deviceScene', (req, res) => {
+  try {
+    let deviceScene = new DeviceScene(
+      req.query['name'],
+      req.query['cond_device_id'],
+      req.query['exec_device_id'],
+      req.query['conditional_topic'],
+      req.query['conditional_payload'],
+      req.query['executable_topic'],
+      req.query['executable_payload'],
+      req.query['conditional_text'],
+      req.query['executable_text']
+    )
+    this.active = true
+    scenes.push(deviceScene)
+    res.json({ Succes: true })
+  } catch (error) {
+    console.log(error)
+    res.json({ Succes: false })
+  }
+})
 app.put('/scene/:id', (req, res) => {
   try {
     let current_scene = get_object_by_id(scenes, req.params['id'])
-    let updatedScene = req.body
-    update_scene(current_scene, updatedScene)
+    if (current_scene) {
+      let updatedScene = req.body
+      update_scene(current_scene, updatedScene)
+    }
     res.json(toJSON(current_scene))
   } catch (error) {
     res.json(toJSON(current_scene))
@@ -429,7 +489,9 @@ app.put('/scene/:id', (req, res) => {
 app.delete('/scene/:id', (req, res) => {
   try {
     let current_scene = get_object_by_id(scenes, req.params['id'])
-    current_scene.delete()
+    if (current_scene.delete) {
+      current_scene.delete()
+    }
     scenes = delete_object(scenes, req.params['id'])
     res.json(get_all_scenes())
   } catch (error) {
@@ -439,10 +501,10 @@ app.delete('/scene/:id', (req, res) => {
 })
 app.get('/scene/:id', (req, res) => {
   try {
-    let current_schedule = get_object_by_id(scenes, req.query['schedule_id'])
-    res.json(current_schedule)
+    let current_scene = get_object_by_id(scenes, req.query['scene_id'])
+    res.json(current_scene)
   } catch (error) {
-    res.json({ Succes: false, msg: "Schedule doesn't exist" })
+    res.json({ Succes: false, msg: "Scene doesn't exist" })
   }
 })
 app.get('/device/:id', (req, res) => {
@@ -472,6 +534,7 @@ app.delete('/device/:id', async (req, res) => {
 })
 mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
+  payload = payload.toString()
   let current_device = get_device_by_mqtt_name(tempDevices, buffer[0])
   if (!current_device) {
     if (buffer[0] === 'stat') {
@@ -483,6 +546,7 @@ mqtt_client.on('message', (topic, payload) => {
   try {
     if (current_device) {
       current_device.processIncomingMessage(topic, payload, io)
+      check_if_in_scene(current_device, scenes, topic, payload)
     }
   } catch (error) {
     console.log(error)

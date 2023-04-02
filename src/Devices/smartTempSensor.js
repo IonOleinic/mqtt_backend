@@ -36,9 +36,13 @@ class SmartTempSensor extends Device {
     this.get_initial_state(mqtt_client)
   }
   get_initial_state(mqtt_client) {
-    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, '')
-    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/2/set`, '')
-    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/3/set`, '')
+    if (this.manufacter == 'tasmota') {
+      //TODO
+    } else if (this.manufacter == 'openBeken') {
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/2/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/3/get`, '')
+    }
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)

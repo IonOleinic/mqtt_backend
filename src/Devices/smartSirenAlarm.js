@@ -23,6 +23,7 @@ class SmartSirenAlarm extends Device {
     this.volume = 2
     this.sound_duration = 10
     this.battery_level = 0
+    this.cmnd_status_topic = `cmnd/${this.mqtt_name}/POWER`
 
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
@@ -46,7 +47,7 @@ class SmartSirenAlarm extends Device {
     this.subscribeToTopic(mqtt_client, this.receive_sound_duration_topic)
     this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
     this.get_device_info(mqtt_client)
-    //this.get_initial_state(mqtt_client)
+    this.get_initial_state(mqtt_client)
   }
   update_options(mqtt_client, new_sound, new_volume, new_duration) {
     this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/set`, new_sound)
@@ -56,16 +57,27 @@ class SmartSirenAlarm extends Device {
   get_initial_state(mqtt_client) {
     if (this.manufacter == 'tasmota') {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
-    } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, '')
+      //TODO
+    } else if (this.manufacter == 'openBeken') {
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/2/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/3/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/5/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/6/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/7/get`, '')
     }
   }
   change_power_state(mqtt_client, socket_nr = 1, status) {
+    if (status == 'TOGGLE') {
+      status = this.status == 'OFF' ? 'ON' : 'OFF'
+    }
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, status)
-    } else {
-      // this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, status)
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, status)
+      this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
+    } else if (this.manufacter == 'openBeken') {
+      this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
+      this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
+      //2 times because not always is changing!!!
     }
   }
   processIncomingMessage(topic, payload, io) {

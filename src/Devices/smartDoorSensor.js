@@ -36,7 +36,7 @@ class SmartDoorSensor extends Device {
     if (this.manufacter == 'tasmota') {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
     } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
     }
   }
   send_toggle_req(mqtt_client) {

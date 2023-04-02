@@ -67,15 +67,10 @@ class SmartStrip extends Device {
     }
   }
   change_power_state(mqtt_client, socket, state) {
-    mqtt_client.publish(
+    this.send_mqtt_req(
+      mqtt_client,
       `cmnd/${this.mqtt_name}/POWER${socket}`,
-      `${state}`,
-      { qos: 0, retain: false },
-      (error) => {
-        if (error) {
-          console.log(error)
-        }
-      }
+      state
     )
   }
   initDevice(mqtt_client) {
@@ -91,25 +86,25 @@ class SmartStrip extends Device {
   }
   update_req(mqtt_client, req_topic) {
     if (this.manufacter === 'openBeken') {
-      if (req_topic === 'POWER') {
-        for (let i = 0; i < this.cmnd_power_topics.length; i++) {
-          this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/set`, '')
-        }
-      } else if (req_topic === 'STATUS') {
+      if (req_topic === 'STATUS') {
         //TODO
       }
     } else if (this.manufacter === 'tasmota') {
-      if (req_topic === 'POWER') {
-        for (let i = 0; i < this.cmnd_power_topics.length; i++) {
-          this.change_power_state(mqtt_client, i + 1, '')
-        }
-      } else if (req_topic === 'STATUS') {
+      if (req_topic === 'STATUS') {
         this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/STATUS`, '8')
       }
     }
   }
   get_initial_state(mqtt_client) {
-    this.update_req(mqtt_client, 'POWER')
+    if (this.manufacter === 'openBeken') {
+      for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/get`, '')
+      }
+    } else if (this.manufacter === 'tasmota') {
+      for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+        this.change_power_state(mqtt_client, i + 1, '')
+      }
+    }
     this.update_req(mqtt_client, 'STATE')
   }
   processIncomingMessage(topic, payload, io) {

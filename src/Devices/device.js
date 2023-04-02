@@ -10,7 +10,7 @@ class Device {
     read_only
   ) {
     this.favorite = false
-    this.id = Math.random().toString(16).slice(3)
+    this.id = Math.random().toString(18).slice(3)
     if (name === '') {
       this.name = 'Device ' + Math.random().toString(4).slice(4, 7)
     } else {
@@ -38,7 +38,8 @@ class Device {
   }
   subscribe_for_device_info(mqtt_client) {
     if (this.manufacter == 'tasmota') {
-      this.subscribeToTopic(mqtt_client, `stat/${this.mqtt_name}/STATUS5`)
+      this.tasmota_info_topic = `stat/${this.mqtt_name}/STATUS5`
+      this.subscribeToTopic(mqtt_client, this.tasmota_info_topic)
     } else if (this.manufacter == 'openBeken') {
       this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/ip`)
       this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/mac`)
@@ -51,23 +52,14 @@ class Device {
   }
   get_device_info(mqtt_client) {
     if (this.manufacter == 'tasmota') {
-      mqtt_client.publish(
-        `cmnd/${this.mqtt_name}/STATUS`,
-        `5`,
-        { qos: 0, retain: false },
-        (error) => {
-          if (error) {
-            console.log(error)
-          }
-        }
-      )
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/STATUS`, '5')
     } else if (this.manufacter == 'openBeken') {
-      //TODO
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/ip/get`, '')
     }
   }
   processDeviceInfoMessage(topic, payload) {
     if (this.manufacter == 'tasmota') {
-      if (topic === this.device_info_topic) {
+      if (topic === this.tasmota_info_topic) {
         const temp = JSON.parse(payload.toString())
         this.MAC = temp.StatusNET.Mac
         this.IP = temp.StatusNET.IPAddress
