@@ -19,7 +19,10 @@ class SmartIR extends Device {
     this.buttons = {}
     if (PRESET.buttons) {
       for (let i = 0; i < PRESET.buttons.length; i++) {
-        this.buttons[`${PRESET.buttons[i].name}`] = PRESET.buttons[i].code
+        this.buttons[`${PRESET.buttons[i].name}`] = {
+          code: PRESET.buttons[i].code,
+          fullName: PRESET.buttons[i].fullName,
+        }
       }
     }
   }
@@ -28,17 +31,12 @@ class SmartIR extends Device {
     this.subscribeToTopic(mqtt_client, this.receive_topic)
     this.get_device_info(mqtt_client)
   }
-  pressButton(client, btn_code) {
+  pressButton(mqtt_client, btn_code) {
     if (btn_code) {
-      client.publish(
+      this.send_mqtt_req(
+        mqtt_client,
         `${this.cmnd_topic}`,
-        `${this.IR_protocol} ${this.bits} ${btn_code} ${this.repeats}`,
-        { qos: 0, retain: false },
-        (error) => {
-          if (error) {
-            console.log(error)
-          }
-        }
+        `${this.IR_protocol} ${this.bits} ${btn_code} ${this.repeats}`
       )
     }
   }

@@ -15,6 +15,7 @@ const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
 const DeviceScene = require('./Scenes/deviceScene.js')
+const SmartBulb = require('./Devices/smartBulb.js')
 
 const DeviceTypes = {
   'Smart Strip': 'smartStrip',
@@ -132,6 +133,7 @@ let siren_alarm1 = new SmartSirenAlarm(
   'tuya_siren1',
   ''
 )
+let tuya_bulb1 = new SmartBulb('RGBCW Bulb', '', 'tasmota', 'tuya_bulb', '')
 devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
@@ -141,6 +143,7 @@ devices.push(athom)
 devices.push(temp_hum1)
 devices.push(door_sensor1)
 devices.push(siren_alarm1)
+devices.push(tuya_bulb1)
 
 deviceScene1 = new DeviceScene(
   'Scene 1',
@@ -151,7 +154,7 @@ deviceScene1 = new DeviceScene(
   siren_alarm1.cmnd_status_topic,
   'ON',
   'Opened',
-  'Power ON'
+  'Sound ON'
 )
 deviceScene2 = new DeviceScene(
   'Scene 2',
@@ -162,7 +165,7 @@ deviceScene2 = new DeviceScene(
   siren_alarm1.cmnd_status_topic,
   'OFF',
   'Closed',
-  'Power OFF'
+  'Sound OFF'
 )
 scenes.push(deviceScene1)
 scenes.push(deviceScene2)
@@ -265,17 +268,14 @@ const get_all_scenes = () => {
   return result
 }
 app.post('/smartIR', (req, res) => {
-  let current_device = get_device_by_mqtt_name(
-    devices,
-    req.query['device_name']
-  )
+  let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
     try {
       current_device.pressButton(mqtt_client, req.query['btn_code'])
-      res.json({ Succes: true })
+      res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ Succes: false })
+      res.json({ succes: false })
     }
   }
 })
@@ -292,18 +292,18 @@ app.post('/tempIR', (req, res) => {
 })
 app.post('/addDevice', (req, res) => {
   let arrived = req.body
-  let result = { Succes: false, msg: 'ERROR' }
+  let result = { succes: false, msg: 'ERROR' }
   let device = {}
   const try_add_device = (device) => {
     if (
       get_device_by_mqtt_name(devices, device.mqtt_name) &&
       device.device_type !== 'smartIR'
     ) {
-      return { Succes: false, msg: 'Device already exists!' }
+      return { succes: false, msg: 'Device already exists!' }
     } else {
       devices.push(device)
       device.initDevice(mqtt_client)
-      return { Succes: true, msg: 'Device added with succes' }
+      return { succes: true, msg: 'Device added with succes' }
     }
   }
   switch (arrived.type) {
@@ -343,7 +343,7 @@ app.post('/addDevice', (req, res) => {
       result = try_add_device(device)
       break
     default:
-      result.Succes = false
+      result.succes = false
       result.msg = 'Error ocurred!'
       break
   }
@@ -361,30 +361,42 @@ app.put('/device/:id', (req, res) => {
   }
 })
 app.get('/smartStrip', (req, res) => {
-  let current_device = get_device_by_mqtt_name(
-    devices,
-    req.query['device_name']
-  )
+  let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
     current_device.update_req(mqtt_client, req.query['req_topic'])
   }
   res.json(current_device)
 })
 app.post('/smartDoorSensor', (req, res) => {
-  let current_device = get_device_by_mqtt_name(
-    devices,
-    req.query['device_name']
-  )
+  let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
     current_device.send_toggle_req(mqtt_client)
   }
-  res.json(current_device)
+  res.json({ succes: true })
+})
+app.post('/smartBulb/power', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_power(mqtt_client, req.query['status'])
+  }
+  res.json({ succes: true })
+})
+app.post('/smartBulb/dimmer', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_dimmer(mqtt_client, req.query['dimmer'])
+  }
+  res.json({ succes: true })
+})
+app.post('/smartBulb/color', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_color(mqtt_client, req.query['color'])
+  }
+  res.json({ succes: true })
 })
 app.post('/smartStrip', async (req, res) => {
-  let current_device = get_device_by_mqtt_name(
-    devices,
-    req.query['device_name']
-  )
+  let current_device = get_object_by_id(devices, req.query['device_id'])
   current_device.change_power_state(
     mqtt_client,
     req.query['socket_nr'],
@@ -394,21 +406,15 @@ app.post('/smartStrip', async (req, res) => {
     Power: `${current_device.power_status[Number(req.query['socket_nr']) - 1]}`,
   })
 })
-app.post('/smartSirenAlarm', async (req, res) => {
-  let current_device = get_device_by_mqtt_name(
-    devices,
-    req.query['device_name']
-  )
+app.post('/smartSirenAlarm/power', async (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
   current_device.change_power_state(mqtt_client, 1, req.query['status'])
   res.json({
     Power: `${current_device.status}`,
   })
 })
-app.post('/updateOptionsSirenAlarm', async (req, res) => {
-  let current_device = get_device_by_mqtt_name(
-    devices,
-    req.query['device_name']
-  )
+app.post('/smartSirenAlarm/options', async (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
   current_device.update_options(
     mqtt_client,
     req.query['new_sound'],
@@ -416,7 +422,7 @@ app.post('/updateOptionsSirenAlarm', async (req, res) => {
     req.query['new_duration']
   )
   res.json({
-    Succes: true,
+    succes: true,
   })
 })
 app.get('/devices', (req, res) => {
@@ -447,10 +453,10 @@ app.post('/schedule', (req, res) => {
     }
     schedule.repeatedly(func, `Power:${state}`)
     scenes.push(schedule)
-    res.json({ Succes: true })
+    res.json({ succes: true })
   } catch (error) {
     console.log(error)
-    res.json({ Succes: false })
+    res.json({ succes: false })
   }
 })
 app.post('/deviceScene', (req, res) => {
@@ -468,10 +474,10 @@ app.post('/deviceScene', (req, res) => {
     )
     this.active = true
     scenes.push(deviceScene)
-    res.json({ Succes: true })
+    res.json({ succes: true })
   } catch (error) {
     console.log(error)
-    res.json({ Succes: false })
+    res.json({ succes: false })
   }
 })
 app.put('/scene/:id', (req, res) => {
@@ -504,7 +510,7 @@ app.get('/scene/:id', (req, res) => {
     let current_scene = get_object_by_id(scenes, req.query['scene_id'])
     res.json(current_scene)
   } catch (error) {
-    res.json({ Succes: false, msg: "Scene doesn't exist" })
+    res.json({ succes: false, msg: "Scene doesn't exist" })
   }
 })
 app.get('/device/:id', (req, res) => {
@@ -512,7 +518,7 @@ app.get('/device/:id', (req, res) => {
   if (current_device) {
     res.json(current_device)
   } else {
-    res.json({ Succes: false, msg: "Device doesn't exist" })
+    res.json({ succes: false, msg: "Device doesn't exist" })
   }
 })
 app.get('/mqtt_groups', (req, res) => {

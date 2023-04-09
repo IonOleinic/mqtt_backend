@@ -12,6 +12,7 @@ class TempIR {
   processIncomingMessage(topic, payload, io) {
     if (topic === this.receive_topic) {
       this.received_code = payload.toString()
+      print(this.received_code)
       if (io) {
         io.emit('update_temp_ir', {
           mqtt_name: this.mqtt_name,
