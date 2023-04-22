@@ -26,6 +26,7 @@ const DeviceTypes = {
   'Smart Temp&Hum Sensor': 'smartTempSensor',
   'Smart Motion Sensor': 'smartMotionSensor',
   'Smart Siren Alarm': 'smartSirenAlarm',
+  'Smart RGB Bulb': 'smartBulb',
 }
 
 // const FrontURL = 'localhost:3000'
@@ -172,7 +173,10 @@ scenes.push(deviceScene2)
 
 const check_if_in_scene = (device, scenes, topic, payload) => {
   for (let i = 0; i < scenes.length; i++) {
-    if (device.id == scenes[i].cond_device_id) {
+    if (
+      device.id == scenes[i].cond_device_id ||
+      device.mqtt_name == scenes[i].cond_device_mqtt
+    ) {
       if (scenes[i].conditional_topic == topic) {
         if (scenes[i].conditional_payload == payload) {
           scenes[i].execute(mqtt_client)
@@ -303,6 +307,7 @@ app.post('/addDevice', (req, res) => {
     } else {
       devices.push(device)
       device.initDevice(mqtt_client)
+      tempDevices = []
       return { succes: true, msg: 'Device added with succes' }
     }
   }
@@ -463,6 +468,7 @@ app.post('/deviceScene', (req, res) => {
   try {
     let deviceScene = new DeviceScene(
       req.query['name'],
+      req.query['cond_device_mqtt'],
       req.query['cond_device_id'],
       req.query['exec_device_id'],
       req.query['conditional_topic'],

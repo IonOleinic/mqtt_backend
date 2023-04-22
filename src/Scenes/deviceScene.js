@@ -2,6 +2,7 @@ const Scene = require('./scene')
 class DeviceScene extends Scene {
   constructor(
     name,
+    cond_device_mqtt,
     cond_device_id,
     exec_device_id,
     conditional_topic,
@@ -20,6 +21,7 @@ class DeviceScene extends Scene {
     this.conditional_payload = conditional_payload
     this.executable_topic = executable_topic
     this.executable_payload = executable_payload
+    this.cond_device_mqtt = cond_device_mqtt
     this.cond_device_id = cond_device_id
     this.exec_device_id = exec_device_id
     this.conditional_text = conditional_text
