@@ -1,6 +1,6 @@
 const Device = require('./device')
 
-class SmartDoorSensor extends Device {
+class SmartMotionSensor extends Device {
   constructor(name, img, manufacter, mqtt_name, mqtt_group) {
     super(
       name,
@@ -8,23 +8,22 @@ class SmartDoorSensor extends Device {
       manufacter,
       mqtt_name,
       mqtt_group,
-      'smartDoorSensor',
+      'smartMotionSensor',
       true,
       true
     )
     if (img === '') {
       this.img =
-        'https://www.expert4house.com/965-large_default/tuya-wifi-door-and-window-sensor.jpg'
+        'https://images.tuyacn.com/ecommerce/15900673368e2805e115e.png?x-oss-process=image/resize,w_510'
     }
-    this.status = 'Closed'
+    this.status = 'No Motion'
     this.battery_level = 0
 
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
-      //Battery topic TODO
     } else if (this.manufacter == 'openBeken') {
       this.receive_status_topic = `${this.mqtt_name}/1/get`
-      this.receive_batt_topic = `${this.mqtt_name}/2/get`
+      this.receive_batt_topic = `${this.mqtt_name}/4/get`
     }
   }
   initDevice(mqtt_client) {
@@ -37,28 +36,41 @@ class SmartDoorSensor extends Device {
   get_initial_state(mqtt_client) {
     if (this.manufacter == 'tasmota') {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
+      //Battery topic TODO
     } else {
       this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
+      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/get`, '')
     }
   }
-  send_toggle_req(mqtt_client) {
-    if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
-    } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, 'TOGGLE')
-    }
-  }
+
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
     if (topic === this.receive_status_topic) {
       let value = payload.toString()
       if (value == 'ON' || value == '1') {
-        this.status = 'Opened'
+        this.status = 'Motion'
+        setTimeout(() => {
+          if (this.status == 'Motion') {
+            this.status = 'No Motion'
+            if (io) {
+              io.emit('update_device', {
+                device: this,
+              })
+            }
+          }
+        }, 10000)
       } else if (value == 'OFF' || value == '0') {
-        this.status = 'Closed'
+        this.status = 'No Motion'
       }
     } else if (topic === this.receive_batt_topic) {
-      this.battery_level = Number(payload.toString())
+      let level = Number(payload.toString())
+      if (level > 75) {
+        this.battery_level = 3
+      } else if (level < 75 && level > 50) {
+        this.battery_level = 2
+      } else if (level < 50) {
+        this.battery_level = 1
+      }
     }
     if (io) {
       io.emit('update_device', {
@@ -67,4 +79,4 @@ class SmartDoorSensor extends Device {
     }
   }
 }
-module.exports = SmartDoorSensor
+module.exports = SmartMotionSensor

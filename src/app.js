@@ -16,6 +16,7 @@ const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
 const DeviceScene = require('./Scenes/deviceScene.js')
 const SmartBulb = require('./Devices/smartBulb.js')
+const SmartMotionSensor = require('./Devices/smartMotionSensor.js')
 
 const DeviceTypes = {
   'Smart Strip': 'smartStrip',
@@ -134,6 +135,13 @@ let siren_alarm1 = new SmartSirenAlarm(
   'tuya_siren1',
   ''
 )
+let motion_sensor1 = new SmartMotionSensor(
+  'Motion Sensor',
+  'https://ae01.alicdn.com/kf/HTB1fdlrPgHqK1RjSZFkq6x.WFXao/Tuya-smart-home-security-wifi-PIR-sensor-for-smart-life-free-APP-compatible.jpg',
+  'openBeken',
+  'neo_motion',
+  ''
+)
 let tuya_bulb1 = new SmartBulb(
   'RGBCW Bulb',
   '',
@@ -151,6 +159,7 @@ devices.push(athom)
 devices.push(temp_hum1)
 devices.push(door_sensor1)
 devices.push(siren_alarm1)
+devices.push(motion_sensor1)
 devices.push(tuya_bulb1)
 
 deviceScene1 = new DeviceScene(

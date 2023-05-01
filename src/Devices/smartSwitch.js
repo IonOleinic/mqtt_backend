@@ -64,13 +64,11 @@ class SmartSwitch extends Device {
     )
   }
   get_initial_state(mqtt_client) {
-    if (this.manufacter === 'openBeken') {
-      for (let i = 0; i < this.cmnd_power_topics.length; i++) {
-        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/get`, '')
-      }
-    } else if (this.manufacter === 'tasmota') {
-      for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+    for (let i = 0; i < this.cmnd_power_topics.length; i++) {
+      if (this.manufacter === 'tasmota') {
         this.change_power_state(mqtt_client, i + 1, '')
+      } else if (this.manufacter === 'openBeken') {
+        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/get`, '')
       }
     }
   }
@@ -78,14 +76,11 @@ class SmartSwitch extends Device {
     this.processDeviceInfoMessage(topic, payload)
     for (let i = 0; i < this.stat_power_topics.length; i++) {
       if (topic === this.stat_power_topics[i]) {
-        if (this.manufacter === 'openBeken') {
-          if (payload.toString() === '1') {
-            this.power_status[i] = 'ON'
-          } else if (payload.toString() === '0') {
-            this.power_status[i] = 'OFF'
-          }
-        } else if (this.manufacter === 'tasmota') {
-          this.power_status[i] = payload.toString()
+        let value = payload.toString()
+        if (value == 'ON' || value == '1') {
+          this.power_status[i] = 'ON'
+        } else if (value == 'OFF' || value == '0') {
+          this.power_status[i] = 'OFF'
         }
       }
     }

@@ -76,17 +76,15 @@ class SmartSirenAlarm extends Device {
       this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
     } else if (this.manufacter == 'openBeken') {
       this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
-      this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
-      //2 times because not always is changing!!!
     }
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
     if (topic === this.receive_status_topic) {
       let value = payload.toString()
-      if (value == '1') {
+      if (value == 'ON' || value == '1') {
         this.status = 'ON'
-      } else if (value == '0') {
+      } else if (value == 'OFF' || value == '0') {
         this.status = 'OFF'
       }
     } else if (topic === this.receive_temp_topic) {
