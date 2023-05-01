@@ -1,7 +1,7 @@
 const Device = require('./device')
 
 class SmartBulb extends Device {
-  constructor(name, img, manufacter, mqtt_name, mqtt_group) {
+  constructor(name, img, manufacter, mqtt_name, mqtt_group, bulb_type = 'rgb') {
     super(
       name,
       img,
@@ -13,12 +13,18 @@ class SmartBulb extends Device {
       false
     )
     if (img === '') {
-      this.img =
-        'https://m.media-amazon.com/images/W/IMAGERENDERING_521856-T1/images/I/51nUiLbAoML.jpg'
+      if (bulb_type.includes('rgb')) {
+        this.img =
+          'https://m.media-amazon.com/images/W/IMAGERENDERING_521856-T1/images/I/51nUiLbAoML.jpg'
+      } else {
+        this.img =
+          'https://5.imimg.com/data5/YT/QF/BN/SELLER-71396138/led-bulb-raw-material-250x250.jpg'
+      }
     }
+    this.bulb_type = bulb_type
     this.color = '555555'
     this.dimmer = 100
-    this.status = 'ON'
+    this.status = 'OFF'
     if (this.manufacter == 'tasmota') {
       this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
     } else if (this.manufacter == 'openBeken') {
@@ -57,10 +63,10 @@ class SmartBulb extends Device {
       if (result.POWER) {
         this.status = result.POWER
       }
-      if (result.Dimmer) {
+      if (result.Dimmer != undefined) {
         this.dimmer = result.Dimmer
       }
-      if (result.Color) {
+      if (result.Color != undefined) {
         this.color = result.Color
       }
     }

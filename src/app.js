@@ -26,7 +26,7 @@ const DeviceTypes = {
   'Smart Temp&Hum Sensor': 'smartTempSensor',
   'Smart Motion Sensor': 'smartMotionSensor',
   'Smart Siren Alarm': 'smartSirenAlarm',
-  'Smart RGB Bulb': 'smartBulb',
+  'Smart Bulb': 'smartBulb',
 }
 
 // const FrontURL = 'localhost:3000'
@@ -134,7 +134,14 @@ let siren_alarm1 = new SmartSirenAlarm(
   'tuya_siren1',
   ''
 )
-let tuya_bulb1 = new SmartBulb('RGBCW Bulb', '', 'tasmota', 'tuya_bulb', '')
+let tuya_bulb1 = new SmartBulb(
+  'RGBCW Bulb',
+  '',
+  'tasmota',
+  'tuya_bulb',
+  '',
+  'rgbcw'
+)
 devices.push(aubess_ir)
 devices.push(plug1)
 devices.push(powerStrip)
@@ -148,6 +155,7 @@ devices.push(tuya_bulb1)
 
 deviceScene1 = new DeviceScene(
   'Scene 1',
+  'door_sensor1',
   door_sensor1.id,
   siren_alarm1.id,
   door_sensor1.receive_status_topic,
@@ -159,6 +167,7 @@ deviceScene1 = new DeviceScene(
 )
 deviceScene2 = new DeviceScene(
   'Scene 2',
+  'door_sensor1',
   door_sensor1.id,
   siren_alarm1.id,
   door_sensor1.receive_status_topic,
@@ -347,6 +356,17 @@ app.post('/addDevice', (req, res) => {
       )
       result = try_add_device(device)
       break
+    case 'smartBulb':
+      device = new SmartBulb(
+        arrived.name,
+        arrived.iconUrl,
+        arrived.manufacter,
+        arrived.mqttName,
+        arrived.groups,
+        arrived.props.bulb_type
+      )
+      result = try_add_device(device)
+      break
     default:
       result.succes = false
       result.msg = 'Error ocurred!'
@@ -383,40 +403,46 @@ app.post('/smartBulb/power', (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
     current_device.send_change_power(mqtt_client, req.query['status'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
   }
-  res.json({ succes: true })
 })
 app.post('/smartBulb/dimmer', (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
     current_device.send_change_dimmer(mqtt_client, req.query['dimmer'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
   }
-  res.json({ succes: true })
 })
 app.post('/smartBulb/color', (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
     current_device.send_change_color(mqtt_client, req.query['color'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
   }
-  res.json({ succes: true })
 })
 app.post('/smartStrip', async (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])
-  current_device.change_power_state(
-    mqtt_client,
-    req.query['socket_nr'],
-    req.query['status']
-  )
-  res.json({
-    Power: `${current_device.power_status[Number(req.query['socket_nr']) - 1]}`,
-  })
+  if (current_device) {
+    current_device.change_power_state(
+      mqtt_client,
+      req.query['socket_nr'],
+      req.query['status']
+    )
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
 })
 app.post('/smartSirenAlarm/power', async (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])
   current_device.change_power_state(mqtt_client, 1, req.query['status'])
-  res.json({
-    Power: `${current_device.status}`,
-  })
+  res.json({ succes: true })
 })
 app.post('/smartSirenAlarm/options', async (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])

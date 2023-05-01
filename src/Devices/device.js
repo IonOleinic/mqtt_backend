@@ -47,7 +47,7 @@ class Device {
   }
   subscribeToTopic(mqtt_client, topic_to_subcribe) {
     mqtt_client.subscribe(`${topic_to_subcribe}`, () => {
-      console.log(`Client subscried on ${topic_to_subcribe}`)
+      console.log(`Client subscribed on ${topic_to_subcribe}`)
     })
   }
   get_device_info(mqtt_client) {
