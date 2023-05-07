@@ -42,6 +42,12 @@ class SmartIR extends Device {
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
+
+    if (io) {
+      io.emit('update_device', {
+        device: this,
+      })
+    }
   }
 }
 module.exports = SmartIR

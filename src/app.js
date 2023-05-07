@@ -6,7 +6,6 @@ const app = express()
 const http = require('http')
 const { Server } = require('socket.io')
 const SmartStrip = require('./Devices/smartStrip.js')
-const SmartSwitch = require('./Devices/smartSwitch.js')
 const SmartIR = require('./Devices/smartIR.js')
 const SmartTempSensor = require('./Devices/smartTempSensor.js')
 const SmartDoorSensor = require('./Devices/smartDoorSensor.js')
@@ -21,7 +20,7 @@ const SmartMotionSensor = require('./Devices/smartMotionSensor.js')
 const DeviceTypes = {
   'Smart Strip': 'smartStrip',
   'Smart Plug': 'smartStrip',
-  'Smart Switch': 'smartSwitch',
+  'Smart Switch': 'smartStrip',
   'Smart IR': 'smartIR',
   'Smart Door Sensor': 'smartDoorSensor',
   'Smart Temp&Hum Sensor': 'smartTempSensor',
@@ -65,21 +64,23 @@ let devices = []
 let tempDevices = []
 let mqtt_groups = []
 
-let qiachip = new SmartSwitch(
+let qiachip = new SmartStrip(
   'priza 1',
   'https://community-assets.home-assistant.io/original/3X/8/a/8abc086dc2b6edf8e4fff33b1204385435042bc1.png',
   'openBeken',
   'qiachip_switch',
   'Living Room',
-  1
+  1,
+  'switch'
 )
-let athom = new SmartSwitch(
+let athom = new SmartStrip(
   'Athom switch',
   'https://1pc.co.il/images/thumbs/0010042_wifi-smart-switch-tuya-vers-2-gang-white-eu_510.jpeg',
   'tasmota',
   'athom2gang',
   'Diana Room,dawda,faefsefsf',
-  2
+  2,
+  'wall_switch'
 )
 
 let plug1 = new SmartStrip(
@@ -88,7 +89,8 @@ let plug1 = new SmartStrip(
   'tasmota',
   'gosund_sp111_1',
   'Diana Room',
-  1
+  1,
+  'plug'
 )
 let plug2 = new SmartStrip(
   'plug2',
@@ -96,7 +98,8 @@ let plug2 = new SmartStrip(
   'tasmota',
   'gosund_sp111_2',
   '',
-  1
+  1,
+  'plug'
 )
 let powerStrip = new SmartStrip(
   'power strip',
@@ -104,7 +107,8 @@ let powerStrip = new SmartStrip(
   'tasmota',
   'gosund_p1',
   '',
-  4
+  4,
+  'plug'
 )
 let aubess_ir = new SmartIR(
   'Horizon Remote',
@@ -202,6 +206,21 @@ const check_if_in_scene = (device, scenes, topic, payload) => {
       }
     }
   }
+}
+const delete_scenes_cascade = (scenes, device_id) => {
+  let temp_scenes = scenes
+  for (let i = 0; i < scenes.length; i++) {
+    if (
+      device_id == scenes[i].cond_device_id ||
+      device_id == scenes[i].exec_device_id
+    ) {
+      if (scenes[i].delete) {
+        scenes[i].delete()
+      }
+      temp_scenes = delete_object(temp_scenes, scenes[i].id)
+    }
+  }
+  return temp_scenes
 }
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
@@ -331,6 +350,7 @@ app.post('/addDevice', (req, res) => {
   }
   switch (arrived.type) {
     case 'smartPlug':
+    case 'smartSwitch':
     case 'smartStrip':
       device = new SmartStrip(
         arrived.name,
@@ -338,18 +358,8 @@ app.post('/addDevice', (req, res) => {
         arrived.manufacter,
         arrived.mqttName,
         arrived.groups,
-        arrived.props.nr_of_sockets
-      )
-      result = try_add_device(device)
-      break
-    case 'smartSwitch':
-      device = new SmartSwitch(
-        arrived.name,
-        arrived.iconUrl,
-        arrived.manufacter,
-        arrived.mqttName,
-        arrived.groups,
-        arrived.props.nr_of_sockets
+        arrived.props.nr_of_sockets,
+        arrived.props.switch_type
       )
       result = try_add_device(device)
       break
@@ -530,6 +540,7 @@ app.put('/scene/:id', (req, res) => {
     }
     res.json(toJSON(current_scene))
   } catch (error) {
+    console.log(error)
     res.json(toJSON(current_scene))
   }
 })
@@ -574,6 +585,7 @@ app.delete('/device/:id', async (req, res) => {
   let device_id = req.params['id']
   if (device_id) {
     devices = delete_object(devices, device_id)
+    scenes = delete_scenes_cascade(scenes, device_id)
     res.json(devices)
   } else {
     res.json(devices)
@@ -584,7 +596,7 @@ mqtt_client.on('message', (topic, payload) => {
   payload = payload.toString()
   let current_device = get_device_by_mqtt_name(tempDevices, buffer[0])
   if (!current_device) {
-    if (buffer[0] === 'stat') {
+    if (buffer[0] === 'stat' || buffer[0] === 'tele') {
       current_device = get_device_by_mqtt_name(devices, buffer[1])
     } else {
       current_device = get_device_by_mqtt_name(devices, buffer[0])

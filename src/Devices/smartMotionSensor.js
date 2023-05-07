@@ -58,7 +58,7 @@ class SmartMotionSensor extends Device {
               })
             }
           }
-        }, 10000)
+        }, 30000)
       } else if (value == 'OFF' || value == '0') {
         this.status = 'No Motion'
       }
@@ -68,8 +68,10 @@ class SmartMotionSensor extends Device {
         this.battery_level = 3
       } else if (level < 75 && level > 50) {
         this.battery_level = 2
-      } else if (level < 50) {
+      } else if (level < 50 && level > 0) {
         this.battery_level = 1
+      } else {
+        this.battery_level = 0
       }
     }
     if (io) {

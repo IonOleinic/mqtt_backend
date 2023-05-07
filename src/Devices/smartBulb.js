@@ -27,6 +27,9 @@ class SmartBulb extends Device {
     this.status = 'OFF'
     if (this.manufacter == 'tasmota') {
       this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
+      this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
+      this.receive_color_topic = `stat/${this.mqtt_name}/Color`
+      this.receive_dimmer_topic = `stat/${this.mqtt_name}/Dimmer`
     } else if (this.manufacter == 'openBeken') {
       //TODO
       // this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
@@ -35,6 +38,9 @@ class SmartBulb extends Device {
   initDevice(mqtt_client) {
     this.subscribe_for_device_info(mqtt_client)
     this.subscribeToTopic(mqtt_client, this.receive_result_topic)
+    this.subscribeToTopic(mqtt_client, this.receive_status_topic)
+    this.subscribeToTopic(mqtt_client, this.receive_color_topic)
+    this.subscribeToTopic(mqtt_client, this.receive_dimmer_topic)
     this.get_device_info(mqtt_client)
     this.get_initial_state(mqtt_client)
   }

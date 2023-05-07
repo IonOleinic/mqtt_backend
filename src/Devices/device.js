@@ -35,14 +35,19 @@ class Device {
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
     this.date = new Date()
+    this.available = false
   }
   subscribe_for_device_info(mqtt_client) {
     if (this.manufacter == 'tasmota') {
+      this.availability_topic = `tele/${this.mqtt_name}/LWT`
       this.tasmota_info_topic = `stat/${this.mqtt_name}/STATUS5`
       this.subscribeToTopic(mqtt_client, this.tasmota_info_topic)
+      this.subscribeToTopic(mqtt_client, this.availability_topic)
     } else if (this.manufacter == 'openBeken') {
+      this.availability_topic = `${this.mqtt_name}/connected`
       this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/ip`)
       this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/mac`)
+      this.subscribeToTopic(mqtt_client, this.availability_topic)
     }
   }
   subscribeToTopic(mqtt_client, topic_to_subcribe) {
@@ -58,6 +63,13 @@ class Device {
     }
   }
   processDeviceInfoMessage(topic, payload) {
+    if (topic == this.availability_topic) {
+      if (payload.toString().toUpperCase() == 'ONLINE') {
+        this.available = true
+      } else {
+        this.available = false
+      }
+    }
     if (this.manufacter == 'tasmota') {
       if (topic === this.tasmota_info_topic) {
         const temp = JSON.parse(payload.toString())

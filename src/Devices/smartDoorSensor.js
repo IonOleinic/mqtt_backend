@@ -30,7 +30,7 @@ class SmartDoorSensor extends Device {
   initDevice(mqtt_client) {
     this.subscribe_for_device_info(mqtt_client)
     this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
+    // this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
     this.get_device_info(mqtt_client)
     this.get_initial_state(mqtt_client)
   }

@@ -1,7 +1,15 @@
 const Device = require('./device')
 
 class SmartStrip extends Device {
-  constructor(name, img, manufacter, mqtt_name, mqtt_group, nr_of_sockets) {
+  constructor(
+    name,
+    img,
+    manufacter,
+    mqtt_name,
+    mqtt_group,
+    nr_of_sockets,
+    switch_type = 'switch'
+  ) {
     super(
       name,
       img,
@@ -13,15 +21,51 @@ class SmartStrip extends Device {
       false
     )
     if (img === '') {
-      if (nr_of_sockets == 1) {
-        this.img =
-          'https://s13emagst.akamaized.net/products/41611/41610854/images/res_d0e3e75338d6c66ce67fb30eb262ba18.png?width=300&height=300&hash=27432531CE4D755B47A28FB1B0327F48'
-      } else if (nr_of_sockets == 2) {
-        this.img =
-          'https://www.calibereurope.com/wp-content/uploads/2022/09/e98075d2cfa89ca060bb9bda48cd624d6df51a3b_HWP121E-8.jpg'
-      } else if (nr_of_sockets >= 3) {
-        this.img =
-          'https://ae01.alicdn.com/kf/H4fdb76beb6d44535b8cff5ffe43a53bfj/Gosund-16A-Eu-Tuya-Wifi-Smart-Power-Strip-Met-3-Usb-poorten-Onafhankelijke-Schakelaar-multi-Plug.jpg_Q90.jpg_.webp'
+      switch (switch_type) {
+        case 'plug':
+          if (nr_of_sockets == 1) {
+            this.img =
+              'https://s13emagst.akamaized.net/products/41611/41610854/images/res_d0e3e75338d6c66ce67fb30eb262ba18.png?width=300&height=300&hash=27432531CE4D755B47A28FB1B0327F48'
+          } else if (nr_of_sockets == 2) {
+            this.img =
+              'https://www.calibereurope.com/wp-content/uploads/2022/09/e98075d2cfa89ca060bb9bda48cd624d6df51a3b_HWP121E-8.jpg'
+          } else if (nr_of_sockets >= 3) {
+            this.img =
+              'https://ae01.alicdn.com/kf/H4fdb76beb6d44535b8cff5ffe43a53bfj/Gosund-16A-Eu-Tuya-Wifi-Smart-Power-Strip-Met-3-Usb-poorten-Onafhankelijke-Schakelaar-multi-Plug.jpg_Q90.jpg_.webp'
+          }
+          break
+        case 'switch':
+          if (nr_of_sockets == 1) {
+            this.img =
+              'https://avatars.mds.yandex.net/get-mpic/5251231/img_id5497564110416717005.jpeg/orig'
+          } else if (nr_of_sockets == 2) {
+            this.img =
+              'https://images.tuyacn.com/ecommerce/16373901148f4e2815df2.jpg?x-oss-process=image/resize,w_510'
+          } else if (nr_of_sockets == 3) {
+            this.img =
+              'https://images.tuyacn.com/ecommerce/1617240656aed309a7530.png?x-oss-process=image/resize,w_750'
+          } else if (nr_of_sockets >= 4) {
+            this.img =
+              'https://5.imimg.com/data5/ECOM/Default/2022/12/RJ/VU/EF/26206366/166989386526574-gang-tuya-wifi-switch-250x250.jpg'
+          }
+          break
+        case 'wall_switch':
+          if (nr_of_sockets == 1) {
+            this.img =
+              'https://ae01.alicdn.com/kf/H1e624a7f7aec456e9f5b0401a1d99e4cS/ATHOM-Homekit-no-Neutral-Needed-WiFi-EU-Standard-Smart-Switch-Touch-key-1-gang-2-gang.jpg'
+          } else if (nr_of_sockets == 2) {
+            this.img =
+              'https://cf.shopee.com.my/file/2f6c3b0298147dbf5f2fcd505d8aa412_tn'
+          } else if (nr_of_sockets == 3) {
+            this.img =
+              'https://images-na.ssl-images-amazon.com/images/I/21KApqangYL._SL500_._AC_SL500_.jpg'
+          } else if (nr_of_sockets >= 4) {
+            this.img =
+              'https://static-01.daraz.pk/p/28ed77f055ace4967a10d2a0b93e8c95.jpg'
+          }
+          break
+        default:
+          break
       }
     }
     this.sensor_status = {
@@ -41,6 +85,7 @@ class SmartStrip extends Device {
         },
       },
     }
+    this.switch_type = switch_type
     this.nr_of_sockets = nr_of_sockets
     this.cmnd_power_topics = []
     this.stat_power_topics = []
@@ -78,7 +123,7 @@ class SmartStrip extends Device {
     for (let i = 0; i < this.stat_power_topics.length; i++) {
       this.subscribeToTopic(mqtt_client, this.stat_power_topics[i])
     }
-    if (this.stat_sensor_topic) {
+    if (this.switch_type == 'plug') {
       this.subscribeToTopic(mqtt_client, this.stat_sensor_topic)
     }
     this.get_device_info(mqtt_client)
