@@ -12,7 +12,7 @@ class Device {
     this.favorite = false
     this.id = Math.random().toString(18).slice(3)
     if (name === '') {
-      this.name = 'Device ' + Math.random().toString(4).slice(4, 7)
+      this.name = 'Device ' + Math.random().toString(16).slice(2, 7)
     } else {
       this.name = name
     }

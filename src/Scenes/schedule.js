@@ -2,11 +2,7 @@ const schedule = require('node-schedule')
 const Scene = require('./scene')
 class Schedule extends Scene {
   constructor(name, device, dayOfWeek, hour, minute) {
-    super(
-      name,
-      'schedule',
-      'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
-    )
+    super(name, 'schedule')
     this.device_id = device.id
     this.device_name = device.name
     this.device_img = device.img
@@ -18,17 +14,17 @@ class Schedule extends Scene {
     this.repeatedlyJob = undefined
   }
 
-  repeatedly(func, actionText) {
+  repeatedly(func, executable_text) {
     if (this.repeatedlyJob) {
       this.repeatedlyJob.cancel(true)
     }
-    this.actionText = actionText
-    const repeat = this.dayOfWeek[0] === '' ? 'once' : this.dayOfWeek.toString()
+    this.executable_text = executable_text
+    const repeat = this.isOnce() ? 'once' : this.dayOfWeek.toString()
     console.log(
-      `Schedule planned for ${this.device_name} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${actionText}`
+      `Schedule planned for ${this.device_name} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${executable_text}`
     )
     let rule = new schedule.RecurrenceRule()
-    if (this.dayOfWeek[0] === '') {
+    if (this.isOnce()) {
       const dateNow = new Date()
       rule.year = dateNow.getFullYear()
       rule.month = dateNow.getMonth()
@@ -53,6 +49,11 @@ class Schedule extends Scene {
       this.repeatedlyJob.cancel(true)
     }
     console.log(`Schedule with id=${this.job_id} was deleted.`)
+  }
+  isOnce() {
+    if (this.dayOfWeek[0] === '') {
+      return true
+    } else return false
   }
 }
 module.exports = Schedule

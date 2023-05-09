@@ -12,11 +12,7 @@ class DeviceScene extends Scene {
     conditional_text = '',
     executable_text = ''
   ) {
-    super(
-      name,
-      'deviceScene',
-      'https://cdn-icons-png.flaticon.com/512/4396/4396090.png'
-    )
+    super(name, 'deviceScene')
     this.conditional_topic = conditional_topic
     this.conditional_payload = conditional_payload
     this.executable_topic = executable_topic

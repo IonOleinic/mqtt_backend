@@ -222,6 +222,27 @@ const delete_scenes_cascade = (scenes, device_id) => {
   }
   return temp_scenes
 }
+const delete_expired_schedules = (scenes) => {
+  let temp_scenes = scenes
+  const dateNow = new Date()
+  for (let i = 0; i < scenes.length; i++) {
+    if (scenes[i].scene_type == 'schedule') {
+      if (scenes[i].isOnce()) {
+        if (scenes[i].hour < dateNow.getHours()) {
+          scenes[i].delete()
+          temp_scenes = delete_object(temp_scenes, scenes[i].id)
+        } else if (
+          scenes[i].hour == dateNow.getHours() &&
+          scenes[i].minute < dateNow.getMinutes()
+        ) {
+          scenes[i].delete()
+          temp_scenes = delete_object(temp_scenes, scenes[i].id)
+        }
+      }
+    }
+  }
+  return temp_scenes
+}
 const mqtt_client = mqtt.connect(conectURL, {
   clientId,
   clean: true,
@@ -331,7 +352,7 @@ app.post('/tempIR', (req, res) => {
   }
   res.json({ Succes: true })
 })
-app.post('/addDevice', (req, res) => {
+app.post('/device', (req, res) => {
   let arrived = req.body
   let result = { succes: false, msg: 'ERROR' }
   let device = {}
@@ -484,6 +505,7 @@ app.get('/devices', (req, res) => {
   }
 })
 app.get('/scenes', (req, res) => {
+  scenes = delete_expired_schedules(scenes)
   res.json(get_all_scenes())
 })
 app.post('/schedule', (req, res) => {
@@ -492,16 +514,21 @@ app.post('/schedule', (req, res) => {
     const dayOfWeek = req.query['dayOfWeek'].split(',')
     const hour = req.query['hour']
     const minute = req.query['minute']
-    const state = req.query['state']
-    const socket_nr = req.query['socket_nr']
     const name = req.query['name']
+    const executable_topic = req.query['executable_topic']
+    const executable_payload = req.query['executable_payload']
+    const executable_text = req.query['executable_text']
     let schedule = new Schedule(name, current_device, dayOfWeek, hour, minute)
     const func = () => {
       if (schedule.active) {
-        current_device.change_power_state(mqtt_client, socket_nr, state)
+        current_device.send_mqtt_req(
+          mqtt_client,
+          executable_topic,
+          executable_payload
+        )
       }
     }
-    schedule.repeatedly(func, `Power:${state}`)
+    schedule.repeatedly(func, executable_text)
     scenes.push(schedule)
     res.json({ succes: true })
   } catch (error) {
@@ -573,7 +600,7 @@ app.get('/device/:id', (req, res) => {
     res.json({ succes: false, msg: "Device doesn't exist" })
   }
 })
-app.get('/mqtt_groups', (req, res) => {
+app.get('/mqttGroups', (req, res) => {
   mqtt_groups = []
   get_all_groups(mqtt_groups, devices)
   res.json(mqtt_groups)
