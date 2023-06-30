@@ -148,7 +148,7 @@ class SmartStrip extends Device {
         this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/get`, '')
       }
     }
-    this.update_req(mqtt_client, 'STATE')
+    this.update_req(mqtt_client, 'STATUS')
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)

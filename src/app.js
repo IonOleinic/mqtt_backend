@@ -14,19 +14,17 @@ const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
 const DeviceScene = require('./Scenes/deviceScene.js')
-const SmartBulb = require('./Devices/smartBulb.js')
+const SmartLed = require('./Devices/smartLed.js')
 const SmartMotionSensor = require('./Devices/smartMotionSensor.js')
 
 const DeviceTypes = {
-  'Smart Strip': 'smartStrip',
-  'Smart Plug': 'smartStrip',
   'Smart Switch': 'smartStrip',
   'Smart IR': 'smartIR',
   'Smart Door Sensor': 'smartDoorSensor',
   'Smart Temp&Hum Sensor': 'smartTempSensor',
   'Smart Motion Sensor': 'smartMotionSensor',
   'Smart Siren Alarm': 'smartSirenAlarm',
-  'Smart Bulb': 'smartBulb',
+  'Smart LED': 'smartLed',
 }
 
 // const FrontURL = 'localhost:3000'
@@ -37,7 +35,11 @@ app.use(bodyParser.json())
 const server = http.createServer(app)
 const io = new Server(server, {
   cors: {
-    origin: ['http://192.168.0.108:3000', 'http://localhost:3000'],
+    origin: [
+      'http://192.168.0.108:3000',
+      'http://localhost:3000',
+      'https://1765-82-77-8-242.ngrok-free.app',
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   },
 })
@@ -146,13 +148,23 @@ let motion_sensor1 = new SmartMotionSensor(
   'neo_motion',
   ''
 )
-let tuya_bulb1 = new SmartBulb(
+let tuya_bulb1 = new SmartLed(
   'RGBCW Bulb',
   '',
   'tasmota',
   'tuya_bulb',
   '',
+  'bulb',
   'rgbcw'
+)
+let tuya_led_strip1 = new SmartLed(
+  'RGB Strip',
+  '',
+  'tasmota',
+  'rgb_controller_1',
+  '',
+  'ledStrip',
+  'rgb'
 )
 devices.push(aubess_ir)
 devices.push(plug1)
@@ -165,6 +177,7 @@ devices.push(door_sensor1)
 devices.push(siren_alarm1)
 devices.push(motion_sensor1)
 devices.push(tuya_bulb1)
+devices.push(tuya_led_strip1)
 
 deviceScene1 = new DeviceScene(
   'Scene 1',
@@ -396,14 +409,15 @@ app.post('/device', (req, res) => {
       )
       result = try_add_device(device)
       break
-    case 'smartBulb':
-      device = new SmartBulb(
+    case 'smartLed':
+      device = new SmartLed(
         arrived.name,
         arrived.iconUrl,
         arrived.manufacter,
         arrived.mqttName,
         arrived.groups,
-        arrived.props.bulb_type
+        arrived.props.sub_type,
+        arrived.props.led_type
       )
       result = try_add_device(device)
       break
@@ -432,40 +446,6 @@ app.get('/smartStrip', (req, res) => {
   }
   res.json(current_device)
 })
-app.post('/smartDoorSensor', (req, res) => {
-  let current_device = get_object_by_id(devices, req.query['device_id'])
-  if (current_device) {
-    current_device.send_toggle_req(mqtt_client)
-  }
-  res.json({ succes: true })
-})
-app.post('/smartBulb/power', (req, res) => {
-  let current_device = get_object_by_id(devices, req.query['device_id'])
-  if (current_device) {
-    current_device.send_change_power(mqtt_client, req.query['status'])
-    res.json({ succes: true })
-  } else {
-    res.json({ succes: false })
-  }
-})
-app.post('/smartBulb/dimmer', (req, res) => {
-  let current_device = get_object_by_id(devices, req.query['device_id'])
-  if (current_device) {
-    current_device.send_change_dimmer(mqtt_client, req.query['dimmer'])
-    res.json({ succes: true })
-  } else {
-    res.json({ succes: false })
-  }
-})
-app.post('/smartBulb/color', (req, res) => {
-  let current_device = get_object_by_id(devices, req.query['device_id'])
-  if (current_device) {
-    current_device.send_change_color(mqtt_client, req.query['color'])
-    res.json({ succes: true })
-  } else {
-    res.json({ succes: false })
-  }
-})
 app.post('/smartStrip', async (req, res) => {
   let current_device = get_object_by_id(devices, req.query['device_id'])
   if (current_device) {
@@ -474,6 +454,67 @@ app.post('/smartStrip', async (req, res) => {
       req.query['socket_nr'],
       req.query['status']
     )
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
+})
+app.post('/smartDoorSensor', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_toggle_req(mqtt_client)
+  }
+  res.json({ succes: true })
+})
+app.post('/smartLed/power', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_power(mqtt_client, req.query['status'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
+})
+app.post('/smartLed/dimmer', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_dimmer(mqtt_client, req.query['dimmer'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
+})
+app.post('/smartLed/color', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_color(mqtt_client, req.query['color'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
+})
+app.post('/smartLed/speed', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_speed(mqtt_client, req.query['speed'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
+})
+app.post('/smartLed/scheme', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_scheme(mqtt_client, req.query['scheme'])
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false })
+  }
+})
+app.post('/smartLed/palette', (req, res) => {
+  let current_device = get_object_by_id(devices, req.query['device_id'])
+  if (current_device) {
+    current_device.send_change_palette(mqtt_client, req.query['palette'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
