@@ -1,16 +1,18 @@
 const Device = require('./device')
 
 class SmartLed extends Device {
-  constructor(
+  constructor({
+    id,
     name,
     img,
     manufacter,
     mqtt_name,
     mqtt_group,
-    sub_type = 'ledStrip',
-    led_type = 'rgb'
-  ) {
+    favorite,
+    attributes = {},
+  }) {
     super(
+      id,
       name,
       img,
       manufacter,
@@ -18,67 +20,98 @@ class SmartLed extends Device {
       mqtt_group,
       'smartLed',
       false,
-      false
+      false,
+      favorite
     )
-    if (img === '') {
-      if (sub_type === 'ledStrip') {
+    this.led_type = attributes.led_type ? attributes.led_type : 'rgb'
+    this.sub_type = attributes.sub_type ? attributes.sub_type : 'ledStrip'
+    this.color = attributes.color ? attributes.color : '555555'
+    this.dimmer = attributes.dimmer ? attributes.dimmer : 100
+    this.speed = attributes.speed ? attributes.speed : 1
+    this.scheme = attributes.scheme ? attributes.scheme : '0'
+    this.status = attributes.status ? attributes.status : 'OFF'
+    this.palette = attributes.palette
+      ? attributes.palette.split(' ')
+      : ['', '', '', '', '']
+    if (img) {
+      this.img = img
+    } else {
+      if (this.sub_type === 'ledStrip') {
         this.img =
           'https://www.geewiz.co.za/190600-large_default/mini-rgb-wifi-led-controller-works-with-alexa-and-google-home.jpg'
       } else {
-        if (led_type.includes('rgb')) {
+        if (this.led_type.includes('rgb')) {
           this.img =
-            'https://m.media-amazon.com/images/W/IMAGERENDERING_521856-T1/images/I/51nUiLbAoML.jpg'
+            'https://www.hicolead.com/cdn/shop/products/18.png?v=1666423551&width=1039'
         } else {
           this.img =
             'https://5.imimg.com/data5/YT/QF/BN/SELLER-71396138/led-bulb-raw-material-250x250.jpg'
         }
       }
     }
-
-    this.led_type = led_type
-    this.sub_type = sub_type
-    this.color = '555555'
-    this.dimmer = 100
-    this.speed = 1
-    this.scheme = '0'
-    this.status = 'OFF'
-    this.palette = ['', '', '', '', '']
     if (this.manufacter == 'tasmota') {
       this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
-      this.receive_color_topic = `stat/${this.mqtt_name}/Color`
       this.receive_dimmer_topic = `stat/${this.mqtt_name}/Dimmer`
+      if (this.led_type.includes('rgb')) {
+        this.receive_color_topic = `stat/${this.mqtt_name}/Color`
+      }
     } else if (this.manufacter == 'openBeken') {
-      //TODO
-      // this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
+      this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
+      this.receive_dimmer_topic = `${this.mqtt_name}/led_dimmer/get`
+      this.receive_status_topic = `${this.mqtt_name}/led_enableAll/get`
+      if (this.led_type.includes('rgb')) {
+        if (this.led_type == 'rgb') {
+          this.receive_color_topic = `${this.mqtt_name}/led_basecolor_rgb/get`
+        } else if (this.led_type == 'rgbcw') {
+          this.receive_color_topic = `${this.mqtt_name}/led_finalcolor_rgbcw/get`
+        }
+      }
     }
   }
   initDevice(mqtt_client) {
     this.subscribe_for_device_info(mqtt_client)
     this.subscribeToTopic(mqtt_client, this.receive_result_topic)
     this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_color_topic)
     this.subscribeToTopic(mqtt_client, this.receive_dimmer_topic)
+    if (this.led_type.includes('rgb')) {
+      this.subscribeToTopic(mqtt_client, this.receive_color_topic)
+    }
     this.get_device_info(mqtt_client)
     this.get_initial_state(mqtt_client)
+    this.send_change_palette(mqtt_client, this.palette)
   }
   get_initial_state(mqtt_client) {
     if (this.manufacter == 'tasmota') {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, '')
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Dimmer`, '')
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Palette`, '')
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '')
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Scheme`, '')
-    } else {
-      // this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
+      if (this.led_type.includes('rgb')) {
+        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, '')
+        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Palette`, '')
+        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Scheme`, '')
+      }
+    } else if (this.manufacter == 'openBeken') {
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Dimmer`, '')
+      if (this.led_type.includes('rgb')) {
+        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, '')
+      }
     }
   }
   send_change_color(mqtt_client, color) {
     if (this.speed != 1) {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
-    this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, color)
+    if (this.manufacter == 'tasmota') {
+      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, color)
+    } else if (this.manufacter == 'openBeken') {
+      this.send_mqtt_req(
+        mqtt_client,
+        `cmnd/${this.mqtt_name}/led_basecolor_rgbcw`,
+        color
+      )
+    }
     let temp = this.speed.toString()
     setTimeout(() => {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, temp)
@@ -90,10 +123,12 @@ class SmartLed extends Device {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
     this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Dimmer`, dimmer)
-    let temp = this.speed.toString()
     setTimeout(() => {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, temp)
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Scheme`, '')
+      this.send_mqtt_req(
+        mqtt_client,
+        `cmnd/${this.mqtt_name}/Speed`,
+        this.speed.toString()
+      )
     }, 10)
   }
   send_change_speed(mqtt_client, speed) {
@@ -107,49 +142,65 @@ class SmartLed extends Device {
       this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
     this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, power)
-    let temp = this.speed.toString()
     setTimeout(() => {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, temp)
+      this.send_mqtt_req(
+        mqtt_client,
+        `cmnd/${this.mqtt_name}/Speed`,
+        this.speed.toString()
+      )
     }, 10)
   }
   send_change_palette(mqtt_client, palette) {
     this.send_mqtt_req(
       mqtt_client,
       `cmnd/${this.mqtt_name}/Palette`,
-      palette.toString().replaceAll(',', ' ')
+      palette.toString().split(',').join(' ')
     )
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
+    let value = payload.toString()
     if (topic == this.receive_result_topic) {
-      let result = JSON.parse(payload.toString())
+      let result = JSON.parse(value)
       if (result.POWER) {
         this.status = result.POWER
       }
       if (result.Dimmer != undefined) {
         this.dimmer = result.Dimmer
       }
-      if (result.Color != undefined) {
-        this.color = result.Color
-      }
-      if (result.Palette != undefined) {
-        let temp = result.Palette.replaceAll('[', '')
-          .replaceAll(']', '')
-          .split(',')
-        for (let i = 0; i < 5; i++) {
-          if (temp[i]) {
-            this.palette[i] = temp[i]
-          } else {
-            this.palette[i] = ''
-          }
-        }
-      }
       if (result.Speed != undefined) {
         this.speed = Number(result.Speed)
       }
-      if (result.Scheme != undefined) {
-        this.scheme = result.Scheme
+      if (this.manufacter == 'tasmota') {
+        if (result.Color != undefined) {
+          this.color = result.Color
+        }
+        if (result.Palette != undefined) {
+          let temp = result.Palette.replaceAll('[', '')
+            .replaceAll(']', '')
+            .split(',')
+          for (let i = 0; i < 5; i++) {
+            if (temp[i]) {
+              this.palette[i] = temp[i]
+            } else {
+              this.palette[i] = ''
+            }
+          }
+        }
+        if (result.Scheme != undefined) {
+          this.scheme = result.Scheme
+        }
       }
+    } else if (topic === this.receive_status_topic) {
+      if (value == 'ON' || value == '1') {
+        this.status = 'ON'
+      } else if (value == 'OFF' || value == '0') {
+        this.status = 'OFF'
+      }
+    } else if (topic === this.receive_color_topic) {
+      this.color = value
+    } else if (topic === this.receive_dimmer_topic) {
+      this.dimmer = value
     }
     if (io) {
       io.emit('update_device', {

@@ -1,8 +1,18 @@
 const Device = require('./device')
 
 class SmartSirenAlarm extends Device {
-  constructor(name, img, manufacter, mqtt_name, mqtt_group) {
+  constructor({
+    id,
+    name,
+    img,
+    manufacter,
+    mqtt_name,
+    mqtt_group,
+    favorite,
+    attributes = {},
+  }) {
     super(
+      id,
       name,
       img,
       manufacter,
@@ -10,21 +20,23 @@ class SmartSirenAlarm extends Device {
       mqtt_group,
       'smartSirenAlarm',
       true,
-      false
+      false,
+      favorite
     )
+    this.status = attributes.status ? attributes.status : 'OFF'
+    this.temperature = attributes.temperature ? attributes.temperature : 0
+    this.humidity = attributes.humidity ? attributes.humidity : 0
+    this.sound = attributes.sound ? attributes.sound : 5
+    this.volume = attributes.volume ? attributes.volume : 2
+    this.sound_duration = attributes.sound_duration
+      ? attributes.sound_duration
+      : 10
+    this.battery_level = attributes.battery_level ? attributes.battery_level : 0
+    this.cmnd_status_topic = `cmnd/${this.mqtt_name}/POWER`
     if (img === '') {
       this.img =
         'https://m.media-amazon.com/images/I/51uN7WDJMNS.__AC_SX300_SY300_QL70_ML2_.jpg'
     }
-    this.status = 'OFF'
-    this.temperature = 0
-    this.humidity = 0
-    this.sound = 5
-    this.volume = 2
-    this.sound_duration = 10
-    this.battery_level = 0
-    this.cmnd_status_topic = `cmnd/${this.mqtt_name}/POWER`
-
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
     } else if (this.manufacter == 'openBeken') {
@@ -80,25 +92,25 @@ class SmartSirenAlarm extends Device {
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
+    let value = payload.toString()
     if (topic === this.receive_status_topic) {
-      let value = payload.toString()
       if (value == 'ON' || value == '1') {
         this.status = 'ON'
       } else if (value == 'OFF' || value == '0') {
         this.status = 'OFF'
       }
     } else if (topic === this.receive_temp_topic) {
-      this.temperature = Number(payload.toString()) / 10
+      this.temperature = Number(value) / 10
     } else if (topic === this.receive_hum_topic) {
-      this.humidity = Number(payload.toString())
+      this.humidity = Number(value)
     } else if (topic === this.receive_sound_topic) {
-      this.sound = Number(payload.toString())
+      this.sound = Number(value)
     } else if (topic === this.receive_volume_topic) {
-      this.volume = Number(payload.toString())
+      this.volume = Number(value)
     } else if (topic === this.receive_sound_duration_topic) {
-      this.sound_duration = Number(payload.toString())
+      this.sound_duration = Number(value)
     } else if (topic === this.receive_batt_topic) {
-      this.battery_level = Number(payload.toString())
+      this.battery_level = Number(value)
     }
 
     if (io) {

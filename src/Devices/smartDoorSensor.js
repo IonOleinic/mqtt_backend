@@ -1,8 +1,18 @@
 const Device = require('./device')
 
 class SmartDoorSensor extends Device {
-  constructor(name, img, manufacter, mqtt_name, mqtt_group) {
+  constructor({
+    id,
+    name,
+    img,
+    manufacter,
+    mqtt_name,
+    mqtt_group,
+    favorite,
+    attributes = {},
+  }) {
     super(
+      id,
       name,
       img,
       manufacter,
@@ -10,15 +20,15 @@ class SmartDoorSensor extends Device {
       mqtt_group,
       'smartDoorSensor',
       true,
-      true
+      true,
+      favorite
     )
+    this.status = attributes.status ? attributes.status : 'Closed'
+    this.battery_level = attributes.status ? attributes.status : 0
     if (img === '') {
       this.img =
         'https://www.expert4house.com/965-large_default/tuya-wifi-door-and-window-sensor.jpg'
     }
-    this.status = 'Closed'
-    this.battery_level = 0
-
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
       //Battery topic TODO
@@ -30,7 +40,6 @@ class SmartDoorSensor extends Device {
   initDevice(mqtt_client) {
     this.subscribe_for_device_info(mqtt_client)
     this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    // this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
     this.get_device_info(mqtt_client)
     this.get_initial_state(mqtt_client)
   }
@@ -50,15 +59,15 @@ class SmartDoorSensor extends Device {
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
+    let value = payload.toString()
     if (topic === this.receive_status_topic) {
-      let value = payload.toString()
       if (value == 'ON' || value == '1') {
         this.status = 'Opened'
       } else if (value == 'OFF' || value == '0') {
         this.status = 'Closed'
       }
     } else if (topic === this.receive_batt_topic) {
-      this.battery_level = Number(payload.toString())
+      this.battery_level = Number(value)
     }
     if (io) {
       io.emit('update_device', {

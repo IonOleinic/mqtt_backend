@@ -1,3 +1,4 @@
+require('dotenv').config()
 const mqtt = require('mqtt')
 const cors = require('cors')
 const bodyParser = require('body-parser')
@@ -5,6 +6,13 @@ const express = require('express')
 const app = express()
 const http = require('http')
 const { Server } = require('socket.io')
+const {
+  getDevices,
+  getDevice,
+  insertDevice,
+  updateDevice,
+  deleteDevice,
+} = require('./database')
 const SmartStrip = require('./Devices/smartStrip.js')
 const SmartIR = require('./Devices/smartIR.js')
 const SmartTempSensor = require('./Devices/smartTempSensor.js')
@@ -14,6 +22,7 @@ const TempIR = require('./Devices/tempIR.js')
 const Horizon_IR = require('./Devices/IRPresets.js')
 const Schedule = require('./Scenes/schedule.js')
 const DeviceScene = require('./Scenes/deviceScene.js')
+const WheatherScene = require('./Scenes/wheatherScene.js')
 const SmartLed = require('./Devices/smartLed.js')
 const SmartMotionSensor = require('./Devices/smartMotionSensor.js')
 
@@ -27,19 +36,12 @@ const DeviceTypes = {
   'Smart LED': 'smartLed',
 }
 
-// const FrontURL = 'localhost:3000'
-// const FrontPort = 3000
-
 app.use(cors())
 app.use(bodyParser.json())
 const server = http.createServer(app)
 const io = new Server(server, {
   cors: {
-    origin: [
-      'http://192.168.0.108:3000',
-      'http://localhost:3000',
-      'https://1765-82-77-8-242.ngrok-free.app',
-    ],
+    origin: [process.env.FRONT_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   },
 })
@@ -53,10 +55,8 @@ io.on('connection', (socket) => {
     console.log(`Connected clients: ${io.engine.clientsCount}`)
   })
 })
-// const mqtt_host = '192.168.0.108'
-// const mqtt_host = 'broker.emqx.io'
-const mqtt_host = '80.96.122.192'
-const mqtt_port = '1883'
+const mqtt_host = process.env.MQTT_HOST
+const mqtt_port = process.env.MQTT_PORT
 const clientId = `mqtt_${Math.random().toString(20).slice(3)}`
 const conectURL = `mqtt://${mqtt_host}:${mqtt_port}`
 
@@ -66,146 +66,89 @@ let devices = []
 let tempDevices = []
 let mqtt_groups = []
 
-let qiachip = new SmartStrip(
-  'priza 1',
-  'https://community-assets.home-assistant.io/original/3X/8/a/8abc086dc2b6edf8e4fff33b1204385435042bc1.png',
-  'openBeken',
-  'qiachip_switch',
-  'Living Room',
-  1,
-  'switch'
-)
-let athom = new SmartStrip(
-  'Athom switch',
-  'https://1pc.co.il/images/thumbs/0010042_wifi-smart-switch-tuya-vers-2-gang-white-eu_510.jpeg',
-  'tasmota',
-  'athom2gang',
-  'Diana Room,dawda,faefsefsf',
-  2,
-  'wall_switch'
-)
+// deviceScene1 = new DeviceScene(
+//   'Scene 1',
+//   'door_sensor1',
+//   door_sensor1.id,
+//   siren_alarm1.id,
+//   door_sensor1.receive_status_topic,
+//   'ON',
+//   siren_alarm1.cmnd_status_topic,
+//   'ON',
+//   'Opened',
+//   'Sound ON'
+// )
+// deviceScene2 = new DeviceScene(
+//   'Scene 2',
+//   'door_sensor1',
+//   door_sensor1.id,
+//   siren_alarm1.id,
+//   door_sensor1.receive_status_topic,
+//   'OFF',
+//   siren_alarm1.cmnd_status_topic,
+//   'OFF',
+//   'Closed',
+//   'Sound OFF'
+// )
+// let wheather1 = new WheatherScene(
+//   'weather scene',
+//   20,
+//   'cmnd/rgb_controller_1/Power',
+//   'OFF',
+//   tuya_led_strip1.id,
+//   'Power OFF',
+//   '>='
+// )
+// scenes.push(wheather1)
+// scenes.push(deviceScene1)
+// scenes.push(deviceScene2)
 
-let plug1 = new SmartStrip(
-  'plug1',
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
-  'tasmota',
-  'gosund_sp111_1',
-  'Diana Room',
-  1,
-  'plug'
-)
-let plug2 = new SmartStrip(
-  'plug2',
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsfydxzL319Ptt0bLKAjFD9hUkyJ3kqTOTsA&usqp=CAU',
-  'tasmota',
-  'gosund_sp111_2',
-  '',
-  1,
-  'plug'
-)
-let powerStrip = new SmartStrip(
-  'power strip',
-  'https://s13emagst.akamaized.net/products/32075/32074500/images/res_e3072d09e97388c6a8f1c747e3dde571.jpg',
-  'tasmota',
-  'gosund_p1',
-  '',
-  4,
-  'plug'
-)
-let aubess_ir = new SmartIR(
-  'Horizon Remote',
-  'https://cf.shopee.ph/file/69fce45352701a9929822bfc88e42978_tn',
-  'openBeken',
-  'aubess_ir',
-  '',
-  new Horizon_IR()
-)
-let temp_hum1 = new SmartTempSensor(
-  'Temp&Hum Sensor',
-  '',
-  'openBeken',
-  'temp_hum1',
-  ''
-)
-let door_sensor1 = new SmartDoorSensor(
-  'Door&Window Sensor',
-  '',
-  'tasmota',
-  'door_sensor1',
-  ''
-)
-let siren_alarm1 = new SmartSirenAlarm(
-  'Tuya Siren',
-  '',
-  'openBeken',
-  'tuya_siren1',
-  ''
-)
-let motion_sensor1 = new SmartMotionSensor(
-  'Motion Sensor',
-  'https://ae01.alicdn.com/kf/HTB1fdlrPgHqK1RjSZFkq6x.WFXao/Tuya-smart-home-security-wifi-PIR-sensor-for-smart-life-free-APP-compatible.jpg',
-  'openBeken',
-  'neo_motion',
-  ''
-)
-let tuya_bulb1 = new SmartLed(
-  'RGBCW Bulb',
-  '',
-  'tasmota',
-  'tuya_bulb',
-  '',
-  'bulb',
-  'rgbcw'
-)
-let tuya_led_strip1 = new SmartLed(
-  'RGB Strip',
-  '',
-  'tasmota',
-  'rgb_controller_1',
-  '',
-  'ledStrip',
-  'rgb'
-)
-devices.push(aubess_ir)
-devices.push(plug1)
-devices.push(powerStrip)
-devices.push(plug2)
-devices.push(qiachip)
-devices.push(athom)
-devices.push(temp_hum1)
-devices.push(door_sensor1)
-devices.push(siren_alarm1)
-devices.push(motion_sensor1)
-devices.push(tuya_bulb1)
-devices.push(tuya_led_strip1)
-
-deviceScene1 = new DeviceScene(
-  'Scene 1',
-  'door_sensor1',
-  door_sensor1.id,
-  siren_alarm1.id,
-  door_sensor1.receive_status_topic,
-  'ON',
-  siren_alarm1.cmnd_status_topic,
-  'ON',
-  'Opened',
-  'Sound ON'
-)
-deviceScene2 = new DeviceScene(
-  'Scene 2',
-  'door_sensor1',
-  door_sensor1.id,
-  siren_alarm1.id,
-  door_sensor1.receive_status_topic,
-  'OFF',
-  siren_alarm1.cmnd_status_topic,
-  'OFF',
-  'Closed',
-  'Sound OFF'
-)
-scenes.push(deviceScene1)
-scenes.push(deviceScene2)
-
+const build_device_obj = (proto_device) => {
+  let device = {}
+  if (proto_device) {
+    proto_device.attributes = JSON.parse(proto_device.attributes)
+  }
+  switch (proto_device.device_type) {
+    case 'smartPlug':
+    case 'smartSwitch':
+    case 'smartStrip':
+      device = new SmartStrip(proto_device)
+      break
+    case 'smartIR':
+      tempDevices = delete_object(tempDevices, proto_device.id)
+      device = new SmartIR(proto_device)
+      break
+    case 'smartLed':
+      device = new SmartLed(proto_device)
+      break
+    case 'smartDoorSensor':
+      device = new SmartDoorSensor(proto_device)
+      break
+    case 'smartTempSensor':
+      device = new SmartTempSensor(proto_device)
+      break
+    case 'smartMotionSensor':
+      device = new SmartMotionSensor(proto_device)
+      break
+    case 'smartSirenAlarm':
+      device = new SmartSirenAlarm(proto_device)
+      break
+    default:
+      break
+  }
+  if (device.initDevice) {
+    device.initDevice(mqtt_client)
+  }
+  return device
+}
+const get_all_devices_db = async () => {
+  let proto_devices = await getDevices()
+  let devices = []
+  for (let i = 0; i < proto_devices.length; i++) {
+    devices.push(build_device_obj(proto_devices[i]))
+  }
+  return devices
+}
 const check_if_in_scene = (device, scenes, topic, payload) => {
   for (let i = 0; i < scenes.length; i++) {
     if (
@@ -264,16 +207,22 @@ const mqtt_client = mqtt.connect(conectURL, {
   password: 'tasmota',
   reconnectPeriod: 1000,
 })
-mqtt_client.on('connect', () => {
-  for (let i = 0; i < devices.length; i++) {
-    devices[i].initDevice(mqtt_client)
+mqtt_client.on('connect', async () => {
+  devices = await get_all_devices_db()
+
+  for (let i = 0; i < scenes.length; i++) {
+    if (scenes[i].initScene) {
+      scenes[i].initScene(mqtt_client)
+    }
   }
 })
 const toJSON = (object) => {
   var attrs = {}
   for (var attr in object) {
     if (typeof object[attr] != 'function') {
-      attrs[attr] = String(object[attr]) // force to string
+      try {
+        attrs[attr] = String(object[attr]) // force to string
+      } catch (error) {}
     }
   }
   return attrs
@@ -334,11 +283,7 @@ const delete_object = (list, object_id) => {
 const get_all_scenes = () => {
   let result = []
   for (let i = 0; i < scenes.length; i++) {
-    if (scenes[i].scene_type === 'schedule') {
-      result.push(toJSON(scenes[i]))
-    } else {
-      result.push(scenes[i])
-    }
+    result.push(toJSON(scenes[i]))
   }
   return result
 }
@@ -356,7 +301,7 @@ app.post('/smartIR', (req, res) => {
 })
 app.post('/tempIR', (req, res) => {
   try {
-    tempIR = new TempIR(req.body.manufacter, req.body.mqtt_name)
+    tempIR = new TempIR(req.query['manufacter'], req.query['mqtt_name'])
     tempDevices.push(tempIR)
     subscribe_to_topic(tempIR.receive_topic)
   } catch (error) {
@@ -365,73 +310,34 @@ app.post('/tempIR', (req, res) => {
   }
   res.json({ Succes: true })
 })
-app.post('/device', (req, res) => {
+app.post('/device', async (req, res) => {
   let arrived = req.body
   let result = { succes: false, msg: 'ERROR' }
-  let device = {}
-  const try_add_device = (device) => {
+  try {
     if (
-      get_device_by_mqtt_name(devices, device.mqtt_name) &&
-      device.device_type !== 'smartIR'
+      get_device_by_mqtt_name(devices, arrived.mqtt_name) &&
+      arrived.device_type !== 'smartIR'
     ) {
-      return { succes: false, msg: 'Device already exists!' }
+      result = { succes: false, msg: 'Device already exists!' }
     } else {
-      devices.push(device)
-      device.initDevice(mqtt_client)
+      let returned_id = await insertDevice(arrived)
+      devices = await get_all_devices_db()
       tempDevices = []
-      return { succes: true, msg: 'Device added with succes' }
+      result = { succes: true, msg: 'Device added with succes' }
     }
+  } catch (error) {
+    console.log(error)
+    result = { succes: false, msg: 'Error ocurred!' }
   }
-  switch (arrived.type) {
-    case 'smartPlug':
-    case 'smartSwitch':
-    case 'smartStrip':
-      device = new SmartStrip(
-        arrived.name,
-        arrived.iconUrl,
-        arrived.manufacter,
-        arrived.mqttName,
-        arrived.groups,
-        arrived.props.nr_of_sockets,
-        arrived.props.switch_type
-      )
-      result = try_add_device(device)
-      break
-    case 'smartIR':
-      tempDevices = delete_object(tempDevices, arrived.id)
-      device = new SmartIR(
-        arrived.name,
-        arrived.iconUrl,
-        arrived.manufacter,
-        arrived.mqttName,
-        arrived.groups,
-        arrived.props
-      )
-      result = try_add_device(device)
-      break
-    case 'smartLed':
-      device = new SmartLed(
-        arrived.name,
-        arrived.iconUrl,
-        arrived.manufacter,
-        arrived.mqttName,
-        arrived.groups,
-        arrived.props.sub_type,
-        arrived.props.led_type
-      )
-      result = try_add_device(device)
-      break
-    default:
-      result.succes = false
-      result.msg = 'Error ocurred!'
-      break
-  }
+
   res.json(result)
 })
-app.put('/device/:id', (req, res) => {
+app.put('/device/:id', async (req, res) => {
   let updatedDevice = req.body
   let current_device = get_object_by_id(devices, req.params['id'])
   try {
+    let returned_id = await updateDevice(req.params['id'], updatedDevice)
+    // devices = await get_all_devices_db()
     update_device(current_device, updatedDevice)
     res.json(current_device)
   } catch (error) {
@@ -539,11 +445,10 @@ app.post('/smartSirenAlarm/options', async (req, res) => {
 })
 app.get('/devices', (req, res) => {
   const filter = decodeURIComponent(req.query['filter'])
-  if (filter !== '') {
-    res.json(filter_device_list(filter, devices))
-  } else if (filter === '' || filter === undefined) {
-    res.json(devices)
+  if (filter) {
+    devices = filter_device_list(filter, devices)
   }
+  res.json(devices)
 })
 app.get('/scenes', (req, res) => {
   scenes = delete_expired_schedules(scenes)
@@ -569,6 +474,7 @@ app.post('/schedule', (req, res) => {
         )
       }
     }
+    schedule.active = true
     schedule.repeatedly(func, executable_text)
     scenes.push(schedule)
     res.json({ succes: true })
@@ -591,8 +497,28 @@ app.post('/deviceScene', (req, res) => {
       req.query['conditional_text'],
       req.query['executable_text']
     )
-    this.active = true
+    deviceScene.active = true
     scenes.push(deviceScene)
+    res.json({ succes: true })
+  } catch (error) {
+    console.log(error)
+    res.json({ succes: false })
+  }
+})
+app.post('/weatherScene', (req, res) => {
+  try {
+    let weatherScene = new WheatherScene(
+      req.query['name'],
+      req.query['target_temperature'],
+      req.query['executable_topic'],
+      req.query['executable_payload'],
+      req.query['exec_device_id'],
+      req.query['executable_text'],
+      req.query['comparison_sign']
+    )
+    weatherScene.active = true
+    weatherScene.initScene(mqtt_client)
+    scenes.push(weatherScene)
     res.json({ succes: true })
   } catch (error) {
     console.log(error)
@@ -641,6 +567,15 @@ app.get('/device/:id', (req, res) => {
     res.json({ succes: false, msg: "Device doesn't exist" })
   }
 })
+app.get('/device/getInitState/:id', (req, res) => {
+  let current_device = get_object_by_id(devices, req.params['id'])
+  if (current_device.get_initial_state) {
+    current_device.get_initial_state(mqtt_client)
+    res.json({ succes: true })
+  } else {
+    res.json({ succes: false, msg: "Device doesn't exist" })
+  }
+})
 app.get('/mqttGroups', (req, res) => {
   mqtt_groups = []
   get_all_groups(mqtt_groups, devices)
@@ -652,7 +587,8 @@ app.get('/deviceTypes', (req, res) => {
 app.delete('/device/:id', async (req, res) => {
   let device_id = req.params['id']
   if (device_id) {
-    devices = delete_object(devices, device_id)
+    let returned_id = await deleteDevice(device_id)
+    devices = await get_all_devices_db()
     scenes = delete_scenes_cascade(scenes, device_id)
     res.json(devices)
   } else {
@@ -662,7 +598,12 @@ app.delete('/device/:id', async (req, res) => {
 mqtt_client.on('message', (topic, payload) => {
   let buffer = topic.split('/')
   payload = payload.toString()
-  let current_device = get_device_by_mqtt_name(tempDevices, buffer[0])
+  let current_device = undefined
+  if (buffer[0] === 'stat' || buffer[0] === 'tele') {
+    current_device = get_device_by_mqtt_name(tempDevices, buffer[1])
+  } else {
+    current_device = get_device_by_mqtt_name(tempDevices, buffer[0])
+  }
   if (!current_device) {
     if (buffer[0] === 'stat' || buffer[0] === 'tele') {
       current_device = get_device_by_mqtt_name(devices, buffer[1])

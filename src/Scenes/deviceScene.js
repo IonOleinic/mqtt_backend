@@ -41,5 +41,8 @@ class DeviceScene extends Scene {
       console.log(error)
     }
   }
+  delete() {
+    console.log(`Device Scene with id=${this.id} was deleted.`)
+  }
 }
 module.exports = DeviceScene
