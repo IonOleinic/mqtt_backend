@@ -1,6 +1,6 @@
-const Scene = require('./scene')
 const request = require('request')
-class WheatherScene extends Scene {
+const Scene = require('./scene')
+class WeatherScene extends Scene {
   constructor(
     name,
     target_temperature,
@@ -104,4 +104,4 @@ class WheatherScene extends Scene {
     console.log(`Weather Scene with id=${this.id} was deleted.`)
   }
 }
-module.exports = WheatherScene
+module.exports = WeatherScene

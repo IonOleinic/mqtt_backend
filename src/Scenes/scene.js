@@ -5,7 +5,7 @@ class Scene {
     } else {
       this.name = name
     }
-    this.date = new Date()
+    this.date = new Date().toString()
     this.id = Math.random().toString(18).slice(3)
     this.favorite = false
     this.active = false
