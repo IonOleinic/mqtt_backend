@@ -70,89 +70,89 @@ class SmartLed extends Device {
     }
   }
   initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
+    this.subscribeForDeviceInfo(mqtt_client)
     this.subscribeToTopic(mqtt_client, this.receive_result_topic)
     this.subscribeToTopic(mqtt_client, this.receive_status_topic)
     this.subscribeToTopic(mqtt_client, this.receive_dimmer_topic)
     if (this.led_type.includes('rgb')) {
       this.subscribeToTopic(mqtt_client, this.receive_color_topic)
     }
-    this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
-    this.send_change_palette(mqtt_client, this.palette)
+    this.getDeviceInfo(mqtt_client)
+    this.getInitialState(mqtt_client)
+    this.sendChangePalette(mqtt_client, this.palette)
   }
-  get_initial_state(mqtt_client) {
+  getInitialState(mqttClient) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Dimmer`, '')
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Dimmer`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '')
       if (this.led_type.includes('rgb')) {
-        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, '')
-        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Palette`, '')
-        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Scheme`, '')
+        this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Color`, '')
+        this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Palette`, '')
+        this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Scheme`, '')
       }
     } else if (this.manufacter == 'openBeken') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Dimmer`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Dimmer`, '')
       if (this.led_type.includes('rgb')) {
-        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, '')
+        this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Color`, '')
       }
     }
   }
-  send_change_color(mqtt_client, color) {
+  sendChangeColor(mqttClient, color) {
     if (this.speed != 1) {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '1')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Color`, color)
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Color`, color)
     } else if (this.manufacter == 'openBeken') {
-      this.send_mqtt_req(
-        mqtt_client,
+      this.sendMqttReq(
+        mqttClient,
         `cmnd/${this.mqtt_name}/led_basecolor_rgbcw`,
         color
       )
     }
     let temp = this.speed.toString()
     setTimeout(() => {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, temp)
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Scheme`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, temp)
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Scheme`, '')
     }, 10)
   }
-  send_change_dimmer(mqtt_client, dimmer) {
+  sendChangeDimmer(mqttClient, dimmer) {
     if (this.speed != 1) {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '1')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
-    this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Dimmer`, dimmer)
+    this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Dimmer`, dimmer)
     setTimeout(() => {
-      this.send_mqtt_req(
-        mqtt_client,
+      this.sendMqttReq(
+        mqttClient,
         `cmnd/${this.mqtt_name}/Speed`,
         this.speed.toString()
       )
     }, 10)
   }
-  send_change_speed(mqtt_client, speed) {
-    this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, speed)
+  sendChangeSpeed(mqttClient, speed) {
+    this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, speed)
   }
-  send_change_scheme(mqtt_client, scheme) {
-    this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Scheme`, scheme)
+  sendChangeScheme(mqttClient, scheme) {
+    this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Scheme`, scheme)
   }
-  send_change_power(mqtt_client, power) {
+  sendChangePower(mqttClient, power) {
     if (this.speed != 1) {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/Speed`, '1')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
-    this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, power)
+    this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, power)
     setTimeout(() => {
-      this.send_mqtt_req(
-        mqtt_client,
+      this.sendMqttReq(
+        mqttClient,
         `cmnd/${this.mqtt_name}/Speed`,
         this.speed.toString()
       )
     }, 10)
   }
-  send_change_palette(mqtt_client, palette) {
-    this.send_mqtt_req(
-      mqtt_client,
+  sendChangePalette(mqttClient, palette) {
+    this.sendMqttReq(
+      mqttClient,
       `cmnd/${this.mqtt_name}/Palette`,
       palette.toString().split(',').join(' ')
     )

@@ -34,22 +34,22 @@ async function deleteDevice(id) {
     throw error
   }
 }
-async function insertDevice(device) {
+async function insertDevice(deviceData) {
   try {
-    let name = device.name
-      ? device.name
+    let name = deviceData.name
+      ? deviceData.name
       : 'Device ' + Math.random().toString(16).slice(2, 7)
     const [result] = await pool.query(
       `INSERT INTO devices(name,img,manufacter,mqtt_name,mqtt_group,device_type,favorite,attributes) VALUES (?,?,?,?,?,?,?,?)`,
       [
         name,
-        device.img,
-        device.manufacter,
-        device.mqtt_name,
-        device.mqtt_group.toString(),
-        device.device_type,
+        deviceData.img,
+        deviceData.manufacter,
+        deviceData.mqtt_name,
+        deviceData.mqtt_group.toString(),
+        deviceData.device_type,
         false,
-        JSON.stringify(device.attributes),
+        JSON.stringify(deviceData.attributes),
       ]
     )
     return result.id

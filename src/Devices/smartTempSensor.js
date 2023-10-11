@@ -38,21 +38,21 @@ class SmartTempSensor extends Device {
       this.receive_batt_topic = `${mqtt_name}/3/get`
     }
   }
-  initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
-    this.subscribeToTopic(mqtt_client, this.receive_temp_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_hum_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
-    this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
+  initDevice(mqttClient) {
+    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeToTopic(mqttClient, this.receive_temp_topic)
+    this.subscribeToTopic(mqttClient, this.receive_hum_topic)
+    this.subscribeToTopic(mqttClient, this.receive_batt_topic)
+    this.getDeviceInfo(mqttClient)
+    this.getInitialState(mqttClient)
   }
-  get_initial_state(mqtt_client) {
+  getInitialState(mqttClient) {
     if (this.manufacter == 'tasmota') {
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/2/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/3/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/2/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/3/get`, '')
     }
   }
   processIncomingMessage(topic, payload, io) {

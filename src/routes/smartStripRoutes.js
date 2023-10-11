@@ -10,7 +10,7 @@ smartStripRoutes.get('/smartStrip', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.update_req(mqttClient, req.query['req_topic'])
+    currentDevice.updateReq(mqttClient, req.query['req_topic'])
   }
   res.json(currentDevice)
 })
@@ -20,7 +20,7 @@ smartStripRoutes.post('/smartStrip', async (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.change_power_state(
+    currentDevice.changePowerState(
       mqttClient,
       req.query['socket_nr'],
       req.query['status']

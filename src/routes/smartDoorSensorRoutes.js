@@ -10,7 +10,7 @@ smartDoorSensorRoutes.post('/smartDoorSensor', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.send_toggle_req(mqttClient)
+    currentDevice.sendToggleReq(mqttClient)
   }
   res.json({ succes: true })
 })

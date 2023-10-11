@@ -113,44 +113,40 @@ class SmartStrip extends Device {
       this.power_status.push('OFF')
     }
   }
-  change_power_state(mqtt_client, socket, state) {
-    this.send_mqtt_req(
-      mqtt_client,
-      `cmnd/${this.mqtt_name}/POWER${socket}`,
-      state
-    )
+  changePowerState(mqttClient, socket, state) {
+    this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER${socket}`, state)
   }
-  initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
+  initDevice(mqttClient) {
+    this.subscribeForDeviceInfo(mqttClient)
     for (let i = 0; i < this.stat_power_topics.length; i++) {
-      this.subscribeToTopic(mqtt_client, this.stat_power_topics[i])
+      this.subscribeToTopic(mqttClient, this.stat_power_topics[i])
     }
     if (this.switch_type == 'plug') {
-      this.subscribeToTopic(mqtt_client, this.stat_sensor_topic)
+      this.subscribeToTopic(mqttClient, this.stat_sensor_topic)
     }
-    this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
+    this.getDeviceInfo(mqttClient)
+    this.getInitialState(mqttClient)
   }
-  update_req(mqtt_client, req_topic) {
+  updateReq(mqttClient, reqTopic) {
     if (this.manufacter === 'openBeken') {
-      if (req_topic === 'STATUS') {
+      if (reqTopic === 'STATUS') {
         //TODO
       }
     } else if (this.manufacter === 'tasmota') {
-      if (req_topic === 'STATUS') {
-        this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/STATUS`, '8')
+      if (reqTopic === 'STATUS') {
+        this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/STATUS`, '8')
       }
     }
   }
-  get_initial_state(mqtt_client) {
+  getInitialState(mqttClient) {
     for (let i = 0; i < this.cmnd_power_topics.length; i++) {
       if (this.manufacter === 'tasmota') {
-        this.change_power_state(mqtt_client, i + 1, '')
+        this.changePowerState(mqttClient, i + 1, '')
       } else if (this.manufacter === 'openBeken') {
-        this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/${i + 1}/get`, '')
+        this.sendMqttReq(mqttClient, `${this.mqtt_name}/${i + 1}/get`, '')
       }
     }
-    this.update_req(mqtt_client, 'STATUS')
+    this.updateReq(mqttClient, 'STATUS')
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)

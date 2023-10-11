@@ -38,19 +38,19 @@ class SmartMotionSensor extends Device {
     }
   }
   initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
+    this.subscribeForDeviceInfo(mqtt_client)
     this.subscribeToTopic(mqtt_client, this.receive_status_topic)
     this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
-    this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
+    this.getDeviceInfo(mqtt_client)
+    this.getInitialState(mqtt_client)
   }
-  get_initial_state(mqtt_client) {
+  getInitialState(mqttClient) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
       //Battery topic TODO
     } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/4/get`, '')
     }
   }
 

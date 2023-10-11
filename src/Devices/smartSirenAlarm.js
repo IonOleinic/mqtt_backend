@@ -49,45 +49,45 @@ class SmartSirenAlarm extends Device {
       this.receive_batt_topic = `${this.mqtt_name}/7/get`
     }
   }
-  initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
-    this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_temp_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_hum_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_sound_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_volume_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_sound_duration_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
-    this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
+  initDevice(mqttClient) {
+    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeToTopic(mqttClient, this.receive_status_topic)
+    this.subscribeToTopic(mqttClient, this.receive_temp_topic)
+    this.subscribeToTopic(mqttClient, this.receive_hum_topic)
+    this.subscribeToTopic(mqttClient, this.receive_sound_topic)
+    this.subscribeToTopic(mqttClient, this.receive_volume_topic)
+    this.subscribeToTopic(mqttClient, this.receive_sound_duration_topic)
+    this.subscribeToTopic(mqttClient, this.receive_batt_topic)
+    this.getDeviceInfo(mqttClient)
+    this.getInitialState(mqttClient)
   }
-  update_options(mqtt_client, new_sound, new_volume, new_duration) {
-    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/set`, new_sound)
-    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/5/set`, new_volume)
-    this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/6/set`, new_duration)
+  updateOptions(mqttClient, newSound, newVolume, newDuration) {
+    this.sendMqttReq(mqttClient, `${this.mqtt_name}/4/set`, newSound)
+    this.sendMqttReq(mqttClient, `${this.mqtt_name}/5/set`, newVolume)
+    this.sendMqttReq(mqttClient, `${this.mqtt_name}/6/set`, newDuration)
   }
-  get_initial_state(mqtt_client) {
+  getInitialState(mqttClient) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/2/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/3/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/4/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/5/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/6/get`, '')
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/7/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/2/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/3/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/4/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/5/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/6/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/7/get`, '')
     }
   }
-  change_power_state(mqtt_client, socket_nr = 1, status) {
+  changePowerState(mqttClient, socket_nr = 1, status) {
     if (status == 'TOGGLE') {
       status = this.status == 'OFF' ? 'ON' : 'OFF'
     }
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
+      this.sendMqttReq(mqttClient, this.cmnd_status_topic, status)
     } else if (this.manufacter == 'openBeken') {
-      this.send_mqtt_req(mqtt_client, this.cmnd_status_topic, status)
+      this.sendMqttReq(mqttClient, this.cmnd_status_topic, status)
     }
   }
   processIncomingMessage(topic, payload, io) {

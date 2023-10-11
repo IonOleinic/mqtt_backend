@@ -21,7 +21,7 @@ class WeatherScene extends Scene {
     this.city = 'suceava'
     this.api_key = '503946cd0949183d14afe29b6673cc5c'
   }
-  get_current_temp() {
+  getCurrentTemp() {
     try {
       let url = `https://api.openweathermap.org/data/2.5/weather?q=${this.city}&units=metric&appid=${this.api_key}`
       request(url, (err, response, body) => {
@@ -73,7 +73,7 @@ class WeatherScene extends Scene {
   initScene(mqtt_client) {
     this.intervalFunc = setInterval(() => {
       if (this.active) {
-        this.get_current_temp()
+        this.getCurrentTemp()
         this.checkTemp(mqtt_client)
       }
     }, 10000)

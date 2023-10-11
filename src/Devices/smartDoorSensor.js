@@ -37,24 +37,24 @@ class SmartDoorSensor extends Device {
       this.receive_batt_topic = `${this.mqtt_name}/2/get`
     }
   }
-  initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
-    this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    this.get_device_info(mqtt_client)
-    this.get_initial_state(mqtt_client)
+  initDevice(mqttClient) {
+    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeToTopic(mqttClient, this.receive_status_topic)
+    this.getDeviceInfo(mqttClient)
+    this.getInitialState(mqttClient)
   }
-  get_initial_state(mqtt_client) {
+  getInitialState(mqttClient) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
     } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
     }
   }
-  send_toggle_req(mqtt_client) {
+  sendToggleReq(mqttClient) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
     } else {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/1/set`, 'TOGGLE')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/set`, 'TOGGLE')
     }
   }
   processIncomingMessage(topic, payload, io) {

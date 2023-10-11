@@ -51,9 +51,23 @@ class Schedule extends Scene {
     console.log(`Schedule with id=${this.job_id} was deleted.`)
   }
   isOnce() {
-    if (this.dayOfWeek[0] === '') {
+    if (this.dayOfWeek[0] === '' || this.dayOfWeek === '') {
       return true
     } else return false
+  }
+  isExpired() {
+    const dateNow = new Date()
+    if (this.isOnce()) {
+      if (this.hour < dateNow.getHours()) {
+        return true
+      } else if (
+        this.hour == dateNow.getHours() &&
+        this.minute < dateNow.getMinutes()
+      ) {
+        return true
+      }
+    }
+    return false
   }
 }
 module.exports = Schedule

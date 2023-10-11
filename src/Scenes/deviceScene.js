@@ -23,10 +23,10 @@ class DeviceScene extends Scene {
     this.conditional_text = conditional_text
     this.executable_text = executable_text
   }
-  execute(mqtt_client) {
+  execute(mqttClient) {
     try {
       if (this.active) {
-        mqtt_client.publish(
+        mqttClient.publish(
           this.executable_topic,
           this.executable_payload,
           { qos: 0, retain: false },

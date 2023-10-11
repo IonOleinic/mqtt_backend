@@ -11,21 +11,20 @@ const {
   checkIfInScene,
   getDeviceByMqttName,
 } = require('./helpers')
-const { deviceRoutes } = require('./routes/deviceRoutes')
 const {
-  getAllScenesLocaly,
   updateAllScenesLocaly,
-  getAllDevicesLocaly,
   updateAllDevicesLocaly,
   getAllTempDevices,
 } = require('./localObjects')
+const { deviceRoutes } = require('./routes/deviceRoutes')
+const { sceneRoutes } = require('./routes/sceneRoutes')
 const { smartStripRoutes } = require('./routes/smartStripRoutes')
 const { smartIRRoutes } = require('./routes/smartIRRoutes')
 const { smartLedRoutes } = require('./routes/smartLedRoutes')
 const { smartSirenAlarmRoutes } = require('./routes/smartSirenAlarmRoutes')
 const { smartDoorSensorRoutes } = require('./routes/smartDoorSensorRoutes')
-const { sceneRoutes } = require('./routes/sceneRoutes')
-
+const { SceneService } = require('./services/sceneService')
+const { DeviceService } = require('./services/deviceService')
 app.use(cors())
 app.use(bodyParser.json())
 app.use('/', deviceRoutes)
@@ -56,7 +55,7 @@ io.on('connection', (socket) => {
 mqttClient.on('connect', async () => {
   let devicesFromDB = await getAllDevicesDB()
   updateAllDevicesLocaly(devicesFromDB)
-  let scenes = getAllScenesLocaly()
+  let scenes = SceneService.getAllScenes()
   for (let i = 0; i < scenes.length; i++) {
     if (scenes[i].initScene) {
       scenes[i].initScene(mqttClient)
@@ -75,15 +74,15 @@ mqttClient.on('message', (topic, payload) => {
   }
   if (!currentDevice) {
     if (buffer[0] === 'stat' || buffer[0] === 'tele') {
-      currentDevice = getDeviceByMqttName(getAllDevicesLocaly(), buffer[1])
+      currentDevice = DeviceService.getDeviceByMqttName(buffer[1])
     } else {
-      currentDevice = getDeviceByMqttName(getAllDevicesLocaly(), buffer[0])
+      currentDevice = DeviceService.getDeviceByMqttName(buffer[0])
     }
   }
   try {
     if (currentDevice) {
       currentDevice.processIncomingMessage(topic, payload, io)
-      checkIfInScene(currentDevice, getAllScenesLocaly(), topic, payload)
+      checkIfInScene(currentDevice, SceneService.getAllScenes(), topic, payload)
     }
   } catch (error) {
     console.log(error)

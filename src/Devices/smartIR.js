@@ -49,19 +49,19 @@ class SmartIR extends Device {
         'https://www.expert4house.com/1281-large_default/tuya-smart-ir-rf-control-wifi-universal.jpg'
     }
   }
-  initDevice(mqtt_client) {
-    this.subscribe_for_device_info(mqtt_client)
-    this.subscribeToTopic(mqtt_client, this.receive_topic)
-    this.get_device_info(mqtt_client)
+  initDevice(mqttClient) {
+    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeToTopic(mqttClient, this.receive_topic)
+    this.getDeviceInfo(mqttClient)
   }
-  pressButton(mqtt_client, btn_code) {
-    if (btn_code) {
-      let openBekenPayload = `${this.IR_protocol} ${this.bits} ${btn_code} ${this.repeats}`
-      let tasmotaPayload = `{"Protocol":"${this.IR_protocol}", "Bits":${this.bits}, "Data":${btn_code}}`
+  pressButton(mqttClient, btnCode) {
+    if (btnCode) {
+      let openBekenPayload = `${this.IR_protocol} ${this.bits} ${btnCode} ${this.repeats}`
+      let tasmotaPayload = `{"Protocol":"${this.IR_protocol}", "Bits":${this.bits}, "Data":${btnCode}}`
       if (this.manufacter == 'tasmota') {
-        this.send_mqtt_req(mqtt_client, `${this.cmnd_topic}`, tasmotaPayload)
+        this.sendMqttReq(mqttClient, `${this.cmnd_topic}`, tasmotaPayload)
       } else if (this.manufacter == 'openBeken') {
-        this.send_mqtt_req(mqtt_client, `${this.cmnd_topic}`, openBekenPayload)
+        this.sendMqttReq(mqttClient, `${this.cmnd_topic}`, openBekenPayload)
       }
     }
   }

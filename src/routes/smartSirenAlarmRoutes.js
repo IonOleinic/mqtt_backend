@@ -9,7 +9,7 @@ smartSirenAlarmRoutes.post('/smartSirenAlarm/power', async (req, res) => {
     getAllDevicesLocaly(),
     req.query['device_id']
   )
-  currentDevice.change_power_state(mqttClient, 1, req.query['status'])
+  currentDevice.changePowerState(mqttClient, 1, req.query['status'])
   res.json({ succes: true })
 })
 smartSirenAlarmRoutes.post('/smartSirenAlarm/options', async (req, res) => {
@@ -17,7 +17,7 @@ smartSirenAlarmRoutes.post('/smartSirenAlarm/options', async (req, res) => {
     getAllDevicesLocaly(),
     req.query['device_id']
   )
-  currentDevice.update_options(
+  currentDevice.updateOptions(
     mqttClient,
     req.query['new_sound'],
     req.query['new_volume'],

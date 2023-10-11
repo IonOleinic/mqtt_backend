@@ -22,38 +22,36 @@ class Device {
     this.battery = battery ? battery : false
     this.read_only = read_only ? read_only : false
     this.mqtt_name = mqtt_name
-    this.mqtt_group = mqtt_group
-      ? mqtt_group.replaceAll(',', ', ').split(',')
-      : []
+    this.mqtt_group = mqtt_group ? mqtt_group.split(',') : []
     this.device_type = device_type
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
     this.date = new Date()
     this.available = false
   }
-  subscribe_for_device_info(mqtt_client) {
+  subscribeForDeviceInfo(mqttClient) {
     if (this.manufacter == 'tasmota') {
       this.availability_topic = `tele/${this.mqtt_name}/LWT`
       this.tasmota_info_topic = `stat/${this.mqtt_name}/STATUS5`
-      this.subscribeToTopic(mqtt_client, this.tasmota_info_topic)
-      this.subscribeToTopic(mqtt_client, this.availability_topic)
+      this.subscribeToTopic(mqttClient, this.tasmota_info_topic)
+      this.subscribeToTopic(mqttClient, this.availability_topic)
     } else if (this.manufacter == 'openBeken') {
       this.availability_topic = `${this.mqtt_name}/connected`
-      this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/ip`)
-      this.subscribeToTopic(mqtt_client, `${this.mqtt_name}/mac`)
-      this.subscribeToTopic(mqtt_client, this.availability_topic)
+      this.subscribeToTopic(mqttClient, `${this.mqtt_name}/ip`)
+      this.subscribeToTopic(mqttClient, `${this.mqtt_name}/mac`)
+      this.subscribeToTopic(mqttClient, this.availability_topic)
     }
   }
-  subscribeToTopic(mqtt_client, topic_to_subcribe) {
-    mqtt_client.subscribe(`${topic_to_subcribe}`, () => {
-      console.log(`Client subscribed on ${topic_to_subcribe}`)
+  subscribeToTopic(mqttClient, topicToSubcribe) {
+    mqttClient.subscribe(`${topicToSubcribe}`, () => {
+      console.log(`Client subscribed on ${topicToSubcribe}`)
     })
   }
-  get_device_info(mqtt_client) {
+  getDeviceInfo(mqttClient) {
     if (this.manufacter == 'tasmota') {
-      this.send_mqtt_req(mqtt_client, `cmnd/${this.mqtt_name}/STATUS`, '5')
+      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/STATUS`, '5')
     } else if (this.manufacter == 'openBeken') {
-      this.send_mqtt_req(mqtt_client, `${this.mqtt_name}/ip/get`, '')
+      this.sendMqttReq(mqttClient, `${this.mqtt_name}/ip/get`, '')
     }
   }
   processDeviceInfoMessage(topic, payload) {
@@ -85,8 +83,8 @@ class Device {
       }
     }
   }
-  send_mqtt_req(mqtt_client, topic, payload) {
-    mqtt_client.publish(topic, payload, { qos: 0, retain: false }, (error) => {
+  sendMqttReq(mqttClient, topic, payload) {
+    mqttClient.publish(topic, payload, { qos: 0, retain: false }, (error) => {
       if (error) {
         console.log(error)
       }

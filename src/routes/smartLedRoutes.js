@@ -10,7 +10,7 @@ smartLedRoutes.post('/smartLed/power', (req, res) => {
     req.query['device_id']
   )
   if (current_device) {
-    current_device.send_change_power(mqttClient, req.query['status'])
+    current_device.sendChangePower(mqttClient, req.query['status'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
@@ -22,7 +22,7 @@ smartLedRoutes.post('/smartLed/dimmer', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.send_change_dimmer(mqttClient, req.query['dimmer'])
+    currentDevice.sendChangeDimmer(mqttClient, req.query['dimmer'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
@@ -34,7 +34,7 @@ smartLedRoutes.post('/smartLed/color', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.send_change_color(mqttClient, req.query['color'])
+    currentDevice.sendChangeColor(mqttClient, req.query['color'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
@@ -46,7 +46,7 @@ smartLedRoutes.post('/smartLed/speed', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.send_change_speed(mqttClient, req.query['speed'])
+    currentDevice.sendChangeSpeed(mqttClient, req.query['speed'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
@@ -58,7 +58,7 @@ smartLedRoutes.post('/smartLed/scheme', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.send_change_scheme(mqttClient, req.query['scheme'])
+    currentDevice.sendChangeScheme(mqttClient, req.query['scheme'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
@@ -70,7 +70,7 @@ smartLedRoutes.post('/smartLed/palette', (req, res) => {
     req.query['device_id']
   )
   if (currentDevice) {
-    currentDevice.send_change_palette(mqttClient, req.query['palette'])
+    currentDevice.sendChangePalette(mqttClient, req.query['palette'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })

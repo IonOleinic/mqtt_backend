@@ -7,43 +7,48 @@ const SmartIR = require('./devices/smartIR.js')
 const SmartTempSensor = require('./devices/smartTempSensor.js')
 const SmartDoorSensor = require('./devices/smartDoorSensor.js')
 const SmartSirenAlarm = require('./devices/smartSirenAlarm.js')
+const Horizon_IR = require('./devices/IRPresets.js')
+const Schedule = require('./scenes/schedule.js')
+const DeviceScene = require('./scenes/deviceScene.js')
+const WeatherScene = require('./scenes/weatherScene.js')
 const {
   updateAllTempDevices,
   getAllTempDevices,
   updateAllDevicesLocaly,
   updateAllScenesLocaly,
+  addSceneLocaly,
 } = require('./localObjects')
 
-const buildDeviceObj = (protoDevice) => {
+const buildDeviceObj = (deviceData) => {
   let device = {}
-  if (protoDevice) {
-    protoDevice.attributes = JSON.parse(protoDevice.attributes)
+  if (deviceData) {
+    deviceData.attributes = JSON.parse(deviceData.attributes)
   }
-  switch (protoDevice.device_type) {
+  switch (deviceData.device_type) {
     case 'smartPlug':
     case 'smartSwitch':
     case 'smartStrip':
-      device = new SmartStrip(protoDevice)
+      device = new SmartStrip(deviceData)
       break
     case 'smartIR':
-      let tempDevices = deleteObject(getAllTempDevices(), protoDevice.id)
-      device = new SmartIR(protoDevice)
+      let tempDevices = deleteObject(getAllTempDevices(), deviceData.id)
+      device = new SmartIR(deviceData)
       updateAllTempDevices(tempDevices)
       break
     case 'smartLed':
-      device = new SmartLed(protoDevice)
+      device = new SmartLed(deviceData)
       break
     case 'smartDoorSensor':
-      device = new SmartDoorSensor(protoDevice)
+      device = new SmartDoorSensor(deviceData)
       break
     case 'smartTempSensor':
-      device = new SmartTempSensor(protoDevice)
+      device = new SmartTempSensor(deviceData)
       break
     case 'smartMotionSensor':
-      device = new SmartMotionSensor(protoDevice)
+      device = new SmartMotionSensor(deviceData)
       break
     case 'smartSirenAlarm':
-      device = new SmartSirenAlarm(protoDevice)
+      device = new SmartSirenAlarm(deviceData)
       break
     default:
       break
@@ -52,6 +57,64 @@ const buildDeviceObj = (protoDevice) => {
     device.initDevice(mqttClient)
   }
   return device
+}
+const buildSceneObj = (sceneData) => {
+  let scene = {}
+  switch (sceneData.scene_type) {
+    case 'schedule':
+      scene = new Schedule(
+        sceneData.name,
+        sceneData.involvedDevice,
+        sceneData.dayOfWeek,
+        sceneData.hour,
+        sceneData.minute
+      )
+      const func = () => {
+        if (scene.active) {
+          sceneData.involvedDevice.sendMqttReq(
+            mqttClient,
+            sceneData.executable_topic,
+            sceneData.executable_payload
+          )
+        }
+      }
+      scene.repeatedly(func, sceneData.executable_text)
+      break
+    case 'weather':
+      scene = new WeatherScene(
+        sceneData.name,
+        sceneData.target_temperature,
+        sceneData.executable_topic,
+        sceneData.executable_payload,
+        sceneData.exec_device_id,
+        sceneData.executable_text,
+        sceneData.comparison_sign
+      )
+      break
+    case 'deviceScene':
+      scene = new DeviceScene(
+        sceneData.name,
+        sceneData.cond_device_mqtt,
+        sceneData.cond_device_id,
+        sceneData.exec_device_id,
+        sceneData.conditional_topic,
+        sceneData.conditional_payload,
+        sceneData.executable_topic,
+        sceneData.executable_payload,
+        sceneData.conditional_text,
+        sceneData.executable_text
+      )
+      break
+
+    default:
+      break
+  }
+  scene.active = true
+  addSceneLocaly(scene)
+  if (scene.initScene) {
+    scene.initScene(mqttClient)
+  }
+  return scene
 }
 const getAllDevicesDB = async () => {
   let protoDevices = await getDevices()
@@ -93,21 +156,12 @@ const deleteScenesCascade = (scenes, deviceId) => {
 }
 const deleteExpiredSchedules = (scenes) => {
   let tempScenes = scenes
-  const dateNow = new Date()
   for (let i = 0; i < scenes.length; i++) {
     if (scenes[i].scene_type == 'schedule') {
-      if (scenes[i].isOnce()) {
-        if (scenes[i].hour < dateNow.getHours()) {
-          scenes[i].delete()
-          tempScenes = deleteObject(tempScenes, scenes[i].id)
-        } else if (
-          scenes[i].hour == dateNow.getHours() &&
-          scenes[i].minute < dateNow.getMinutes()
-        ) {
-          scenes[i].delete()
-          tempScenes = deleteObject(tempScenes, scenes[i].id)
-          updateAllScenesLocaly(tempScenes)
-        }
+      if (scenes[i].isExpired()) {
+        scenes[i].delete()
+        tempScenes = deleteObject(tempScenes, scenes[i].id)
+        tempScenes = updateAllScenesLocaly(tempScenes)
       }
     }
   }
@@ -192,4 +246,5 @@ module.exports = {
   getDeviceByMqttName,
   getObjectById,
   deleteObject,
+  buildSceneObj,
 }
