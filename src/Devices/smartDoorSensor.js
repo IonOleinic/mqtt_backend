@@ -1,10 +1,11 @@
 const Device = require('./device')
-
+const { mqttClient } = require('../mqttClient')
 class SmartDoorSensor extends Device {
   constructor({
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -15,6 +16,7 @@ class SmartDoorSensor extends Device {
       id,
       name,
       img,
+      user_id,
       manufacter,
       mqtt_name,
       mqtt_group,
@@ -37,20 +39,20 @@ class SmartDoorSensor extends Device {
       this.receive_batt_topic = `${this.mqtt_name}/2/get`
     }
   }
-  initDevice(mqttClient) {
+  initDevice() {
     this.subscribeForDeviceInfo(mqttClient)
     this.subscribeToTopic(mqttClient, this.receive_status_topic)
     this.getDeviceInfo(mqttClient)
     this.getInitialState(mqttClient)
   }
-  getInitialState(mqttClient) {
+  getInitialState() {
     if (this.manufacter == 'tasmota') {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
     } else {
       this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
     }
   }
-  sendToggleReq(mqttClient) {
+  sendToggleReq() {
     if (this.manufacter == 'tasmota') {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
     } else {

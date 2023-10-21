@@ -1,29 +1,37 @@
 const Scene = require('./scene')
+const { mqttClient } = require('../mqttClient')
 class DeviceScene extends Scene {
-  constructor(
+  constructor({
+    id,
     name,
-    cond_device_mqtt,
-    cond_device_id,
+    active,
+    favorite,
+    date,
     exec_device_id,
-    conditional_topic,
-    conditional_payload,
     executable_topic,
     executable_payload,
-    conditional_text = '',
-    executable_text = ''
-  ) {
-    super(name, 'deviceScene')
-    this.conditional_topic = conditional_topic
-    this.conditional_payload = conditional_payload
-    this.executable_topic = executable_topic
-    this.executable_payload = executable_payload
-    this.cond_device_mqtt = cond_device_mqtt
-    this.cond_device_id = cond_device_id
-    this.exec_device_id = exec_device_id
-    this.conditional_text = conditional_text
-    this.executable_text = executable_text
+    executable_text,
+    attributes = {},
+  }) {
+    super(
+      id,
+      name,
+      'deviceScene',
+      active,
+      favorite,
+      date,
+      exec_device_id,
+      executable_topic,
+      executable_payload,
+      executable_text
+    )
+    this.cond_device_id = attributes.cond_device_id
+    this.cond_device_mqtt = attributes.cond_device_mqtt
+    this.conditional_topic = attributes.conditional_topic
+    this.conditional_payload = attributes.conditional_payload
+    this.conditional_text = attributes.conditional_text
   }
-  execute(mqttClient) {
+  execute() {
     try {
       if (this.active) {
         mqttClient.publish(

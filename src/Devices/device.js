@@ -3,6 +3,7 @@ class Device {
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -11,16 +12,14 @@ class Device {
     read_only,
     favorite
   ) {
-    this.favorite = favorite ? favorite : false
-    this.id = id ? id : Math.random().toString(18).slice(3)
-    this.name = name ? name : 'Device ' + Math.random().toString(16).slice(2, 7)
+    this.user_id = user_id
+    this.favorite = favorite
+    this.id = id
+    this.name = name
     this.manufacter = manufacter
-    this.img =
-      img === ''
-        ? 'https://cdn-icons-png.flaticon.com/512/2948/2948319.png'
-        : img
-    this.battery = battery ? battery : false
-    this.read_only = read_only ? read_only : false
+    this.img = img
+    this.battery = battery
+    this.read_only = read_only
     this.mqtt_name = mqtt_name
     this.mqtt_group = mqtt_group ? mqtt_group.split(',') : []
     this.device_type = device_type

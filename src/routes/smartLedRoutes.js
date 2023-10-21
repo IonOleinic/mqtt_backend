@@ -1,76 +1,56 @@
 const express = require('express')
 const smartLedRoutes = express.Router()
-const { mqttClient } = require('../mqttClient')
-const { getObjectById } = require('../helpers')
-const { getAllDevicesLocaly } = require('../localObjects')
+const { DeviceService } = require('../services/deviceService')
 
-smartLedRoutes.post('/smartLed/power', (req, res) => {
-  let current_device = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartLedRoutes.post('/smartLed/power', async (req, res) => {
+  let current_device = await DeviceService.getDeviceByID(req.query['device_id'])
   if (current_device) {
-    current_device.sendChangePower(mqttClient, req.query['status'])
+    current_device.sendChangePower(req.query['status'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
   }
 })
-smartLedRoutes.post('/smartLed/dimmer', (req, res) => {
-  let currentDevice = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartLedRoutes.post('/smartLed/dimmer', async (req, res) => {
+  let currentDevice = await DeviceService.getDeviceByID(req.query['device_id'])
   if (currentDevice) {
-    currentDevice.sendChangeDimmer(mqttClient, req.query['dimmer'])
+    currentDevice.sendChangeDimmer(req.query['dimmer'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
   }
 })
-smartLedRoutes.post('/smartLed/color', (req, res) => {
-  let currentDevice = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartLedRoutes.post('/smartLed/color', async (req, res) => {
+  let currentDevice = await DeviceService.getDeviceByID(req.query['device_id'])
   if (currentDevice) {
-    currentDevice.sendChangeColor(mqttClient, req.query['color'])
+    currentDevice.sendChangeColor(req.query['color'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
   }
 })
-smartLedRoutes.post('/smartLed/speed', (req, res) => {
-  let currentDevice = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartLedRoutes.post('/smartLed/speed', async (req, res) => {
+  let currentDevice = await DeviceService.getDeviceByID(req.query['device_id'])
   if (currentDevice) {
-    currentDevice.sendChangeSpeed(mqttClient, req.query['speed'])
+    currentDevice.sendChangeSpeed(req.query['speed'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
   }
 })
-smartLedRoutes.post('/smartLed/scheme', (req, res) => {
-  let currentDevice = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartLedRoutes.post('/smartLed/scheme', async (req, res) => {
+  let currentDevice = await DeviceService.getDeviceByID(req.query['device_id'])
   if (currentDevice) {
-    currentDevice.sendChangeScheme(mqttClient, req.query['scheme'])
+    currentDevice.sendChangeScheme(req.query['scheme'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })
   }
 })
-smartLedRoutes.post('/smartLed/palette', (req, res) => {
-  let currentDevice = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartLedRoutes.post('/smartLed/palette', async (req, res) => {
+  let currentDevice = await DeviceService.getDeviceByID(req.query['device_id'])
   if (currentDevice) {
-    currentDevice.sendChangePalette(mqttClient, req.query['palette'])
+    currentDevice.sendChangePalette(req.query['palette'])
     res.json({ succes: true })
   } else {
     res.json({ succes: false })

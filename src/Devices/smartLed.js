@@ -1,10 +1,11 @@
 const Device = require('./device')
-
+const { mqttClient } = require('../mqttClient')
 class SmartLed extends Device {
   constructor({
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -15,6 +16,7 @@ class SmartLed extends Device {
       id,
       name,
       img,
+      user_id,
       manufacter,
       mqtt_name,
       mqtt_group,
@@ -69,19 +71,19 @@ class SmartLed extends Device {
       }
     }
   }
-  initDevice(mqtt_client) {
-    this.subscribeForDeviceInfo(mqtt_client)
-    this.subscribeToTopic(mqtt_client, this.receive_result_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_dimmer_topic)
+  initDevice() {
+    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeToTopic(mqttClient, this.receive_result_topic)
+    this.subscribeToTopic(mqttClient, this.receive_status_topic)
+    this.subscribeToTopic(mqttClient, this.receive_dimmer_topic)
     if (this.led_type.includes('rgb')) {
-      this.subscribeToTopic(mqtt_client, this.receive_color_topic)
+      this.subscribeToTopic(mqttClient, this.receive_color_topic)
     }
-    this.getDeviceInfo(mqtt_client)
-    this.getInitialState(mqtt_client)
-    this.sendChangePalette(mqtt_client, this.palette)
+    this.getDeviceInfo(mqttClient)
+    this.getInitialState(mqttClient)
+    this.sendChangePalette(mqttClient, this.palette)
   }
-  getInitialState(mqttClient) {
+  getInitialState() {
     if (this.manufacter == 'tasmota') {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Dimmer`, '')
@@ -99,7 +101,7 @@ class SmartLed extends Device {
       }
     }
   }
-  sendChangeColor(mqttClient, color) {
+  sendChangeColor(color) {
     if (this.speed != 1) {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
@@ -118,7 +120,7 @@ class SmartLed extends Device {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Scheme`, '')
     }, 10)
   }
-  sendChangeDimmer(mqttClient, dimmer) {
+  sendChangeDimmer(dimmer) {
     if (this.speed != 1) {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
@@ -131,13 +133,13 @@ class SmartLed extends Device {
       )
     }, 10)
   }
-  sendChangeSpeed(mqttClient, speed) {
+  sendChangeSpeed(speed) {
     this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, speed)
   }
-  sendChangeScheme(mqttClient, scheme) {
+  sendChangeScheme(scheme) {
     this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Scheme`, scheme)
   }
-  sendChangePower(mqttClient, power) {
+  sendChangePower(power) {
     if (this.speed != 1) {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/Speed`, '1')
     }
@@ -150,7 +152,7 @@ class SmartLed extends Device {
       )
     }, 10)
   }
-  sendChangePalette(mqttClient, palette) {
+  sendChangePalette(palette) {
     this.sendMqttReq(
       mqttClient,
       `cmnd/${this.mqtt_name}/Palette`,

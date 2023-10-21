@@ -1,10 +1,11 @@
 const Device = require('./device')
-
+const { mqttClient } = require('../mqttClient')
 class SmartTempSensor extends Device {
   constructor({
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -15,12 +16,13 @@ class SmartTempSensor extends Device {
       id,
       name,
       img,
+      user_id,
       manufacter,
       mqtt_name,
       mqtt_group,
       'smartTempSensor',
-      true,
-      true,
+      false,
+      false,
       favorite
     )
     this.temperature = attributes.temperature ? attributes.temperature : 0
@@ -38,7 +40,7 @@ class SmartTempSensor extends Device {
       this.receive_batt_topic = `${mqtt_name}/3/get`
     }
   }
-  initDevice(mqttClient) {
+  initDevice() {
     this.subscribeForDeviceInfo(mqttClient)
     this.subscribeToTopic(mqttClient, this.receive_temp_topic)
     this.subscribeToTopic(mqttClient, this.receive_hum_topic)

@@ -1,60 +1,51 @@
 const {
-  getAllDevicesDB,
-  deleteScenesCascade,
   filterDeviceList,
-  updateDeviceLocaly,
   getDeviceByMqttName,
   getAllGroups,
-  getObjectById,
 } = require('../helpers')
-const { insertDevice, updateDevice, deleteDevice } = require('../database')
 const { DeviceTypes } = require('../deviceTypes')
-const {
-  getAllScenesLocaly,
-  getAllDevicesLocaly,
-  updateAllScenesLocaly,
-  updateAllDevicesLocaly,
-  updateAllTempDevices,
-} = require('../localObjects')
+const DeviceCache = require('../cache/deviceCache')
+const SceneCache = require('../cache/sceneCache')
+
 class DeviceService {
-  static getAllDevices(filter) {
-    let devicesToReturn = getAllDevicesLocaly()
+  static getAllTempDevices() {
+    return DeviceCache.getTempDevices()
+  }
+  static insertTempDevice(tempDevice) {
+    return DeviceCache.insertTempDevice(tempDevice)
+  }
+  static deleteTempDevice(tempDeviceId) {
+    return DeviceCache.deleteTempDevice(tempDeviceId)
+  }
+  static async getAllDevices(filter) {
+    let devicesToReturn = await DeviceCache.getDevices()
     if (filter) {
       devicesToReturn = filterDeviceList(filter, devicesToReturn)
     }
     return devicesToReturn
   }
-  static getDeviceByID(deviceId) {
-    let localDevices = getAllDevicesLocaly()
-    return getObjectById(localDevices, deviceId)
-  }
-  static getDeviceByMqttName(deviceId) {
-    let localDevices = getAllDevicesLocaly()
-    return getDeviceByMqttName(localDevices, deviceId)
+  static async getDeviceByID(deviceId) {
+    return await DeviceCache.getDevice(deviceId)
   }
   static async insertDevice(deviceData) {
-    let returnedId = await insertDevice(deviceData)
-    let devices = await getAllDevicesDB()
-    updateAllTempDevices([])
-    return devices
+    return await DeviceCache.insertDevice(deviceData)
   }
   static async updateDevice(deviceId, deviceData) {
-    let currentDevice = getObjectById(getAllDevicesLocaly(), deviceId)
-    updateDeviceLocaly(currentDevice, deviceData)
-    let returnedId = await updateDevice(deviceId, deviceData)
-    return currentDevice
+    return await DeviceCache.updateDevice(deviceId, deviceData)
   }
   static async deleteDevice(deviceId) {
-    let returnedId = await deleteDevice(deviceId)
-    let devices = await getAllDevicesDB()
-    let scenes = deleteScenesCascade(getAllScenesLocaly(), deviceId)
-    updateAllScenesLocaly(scenes)
-    updateAllDevicesLocaly(devices)
-    return devices
+    await SceneCache.deleteScenesCascade(deviceId)
+    return await DeviceCache.deleteDevice(deviceId)
   }
-  static getMqttGroups() {
-    let mqttGroups = getAllGroups(getAllDevicesLocaly())
+  static async getMqttGroups() {
+    let mqttGroups = getAllGroups(await DeviceService.getAllDevices())
     return mqttGroups
+  }
+  static getDeviceByMqttName(
+    deviceId,
+    listOfDevices = DeviceCache.getDevices()
+  ) {
+    return getDeviceByMqttName(listOfDevices, deviceId)
   }
   static getDeviceTypes() {
     return DeviceTypes

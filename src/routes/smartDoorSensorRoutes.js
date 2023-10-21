@@ -1,16 +1,11 @@
 const express = require('express')
 const smartDoorSensorRoutes = express.Router()
-const { mqttClient } = require('../mqttClient')
-const { getObjectById } = require('../helpers')
-const { getAllDevicesLocaly } = require('../localObjects')
+const { DeviceService } = require('../services/deviceService')
 
-smartDoorSensorRoutes.post('/smartDoorSensor', (req, res) => {
-  let currentDevice = getObjectById(
-    getAllDevicesLocaly(),
-    req.query['device_id']
-  )
+smartDoorSensorRoutes.post('/smartDoorSensor', async (req, res) => {
+  let currentDevice = await DeviceService.getDeviceByID(req.query['device_id'])
   if (currentDevice) {
-    currentDevice.sendToggleReq(mqttClient)
+    currentDevice.sendToggleReq()
   }
   res.json({ succes: true })
 })

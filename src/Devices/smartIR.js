@@ -1,10 +1,11 @@
 const Device = require('./device')
-
+const { mqttClient } = require('../mqttClient')
 class SmartIR extends Device {
   constructor({
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -15,6 +16,7 @@ class SmartIR extends Device {
       id,
       name,
       img,
+      user_id,
       manufacter,
       mqtt_name,
       mqtt_group,
@@ -49,12 +51,12 @@ class SmartIR extends Device {
         'https://www.expert4house.com/1281-large_default/tuya-smart-ir-rf-control-wifi-universal.jpg'
     }
   }
-  initDevice(mqttClient) {
+  initDevice() {
     this.subscribeForDeviceInfo(mqttClient)
     this.subscribeToTopic(mqttClient, this.receive_topic)
     this.getDeviceInfo(mqttClient)
   }
-  pressButton(mqttClient, btnCode) {
+  pressButton(btnCode) {
     if (btnCode) {
       let openBekenPayload = `${this.IR_protocol} ${this.bits} ${btnCode} ${this.repeats}`
       let tasmotaPayload = `{"Protocol":"${this.IR_protocol}", "Bits":${this.bits}, "Data":${btnCode}}`

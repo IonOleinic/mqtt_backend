@@ -1,10 +1,11 @@
 const Device = require('./device')
-
+const { mqttClient } = require('../mqttClient')
 class SmartMotionSensor extends Device {
   constructor({
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -15,6 +16,7 @@ class SmartMotionSensor extends Device {
       id,
       name,
       img,
+      user_id,
       manufacter,
       mqtt_name,
       mqtt_group,
@@ -37,14 +39,14 @@ class SmartMotionSensor extends Device {
         'https://images.tuyacn.com/ecommerce/15900673368e2805e115e.png?x-oss-process=image/resize,w_510'
     }
   }
-  initDevice(mqtt_client) {
-    this.subscribeForDeviceInfo(mqtt_client)
-    this.subscribeToTopic(mqtt_client, this.receive_status_topic)
-    this.subscribeToTopic(mqtt_client, this.receive_batt_topic)
-    this.getDeviceInfo(mqtt_client)
-    this.getInitialState(mqtt_client)
+  initDevice() {
+    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeToTopic(mqttClient, this.receive_status_topic)
+    this.subscribeToTopic(mqttClient, this.receive_batt_topic)
+    this.getDeviceInfo(mqttClient)
+    this.getInitialState(mqttClient)
   }
-  getInitialState(mqttClient) {
+  getInitialState() {
     if (this.manufacter == 'tasmota') {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
       //Battery topic TODO

@@ -1,16 +1,15 @@
 const express = require('express')
 const sceneRoutes = express.Router()
 const { SceneService } = require('../services/sceneService')
-const { DeviceService } = require('../services/deviceService')
 
-sceneRoutes.get('/scenes', (req, res) => {
-  let scenes = SceneService.getAllScenes((json = true))
+sceneRoutes.get('/scenes', async (req, res) => {
+  let scenes = await SceneService.getAllScenes((json = true))
   res.json(scenes)
 })
 sceneRoutes.get('/scene/:id', async (req, res) => {
   try {
     let currentScene = await SceneService.getSceneByID(
-      req.query['scene_id'],
+      req.params['id'],
       (json = true)
     )
     res.json(currentScene)
@@ -21,11 +20,6 @@ sceneRoutes.get('/scene/:id', async (req, res) => {
 sceneRoutes.post('/scene', async (req, res) => {
   let sceneData = req.body
   try {
-    if (sceneData.scene_type == 'schedule') {
-      sceneData.involvedDevice = await DeviceService.getDeviceByID(
-        sceneData.device_id
-      )
-    }
     await SceneService.insertScene(sceneData)
     res.json({ succes: true })
   } catch (error) {

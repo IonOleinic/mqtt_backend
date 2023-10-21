@@ -1,51 +1,55 @@
-const {
-  deleteExpiredSchedules,
-  toJSON,
-  getObjectById,
-  deleteObject,
-  updateSceneLocaly,
-  buildSceneObj,
-} = require('../helpers')
-const {
-  getAllScenesLocaly,
-  updateAllScenesLocaly,
-  convertScenesJSON,
-} = require('../localObjects')
+const SceneCache = require('../cache/sceneCache')
+const toJSON = (object) => {
+  var attrs = {}
+  for (var attr in object) {
+    if (typeof object[attr] != 'function') {
+      try {
+        if (['number', 'boolean', 'array'].includes(typeof object[attr])) {
+          attrs[attr] = object[attr]
+        } else {
+          attrs[attr] = String(object[attr])
+        } // force to string
+      } catch (error) {}
+    }
+  }
+  return attrs
+}
+// const convertScenesJSON = (scenes) => {
+//   let scenesToReturn = []
+//   for (let i = 0; i < scenes.length; i++) {
+//     scenesToReturn.push(toJSON(scenes[i]))
+//   }
+//   return scenesToReturn
+// }
 class SceneService {
-  static getAllScenes(json = false) {
-    let scenes = deleteExpiredSchedules(getAllScenesLocaly())
+  static async getAllScenes(json = false) {
+    let scenes = await SceneCache.getScenes()
     if (json) {
-      return convertScenesJSON(scenes)
+      return scenes.map((scene) => {
+        return toJSON(scene)
+      })
     }
     return scenes
   }
-  static getSceneByID(sceneId, json = false) {
-    let currentScene = getObjectById(getAllScenesLocaly(), sceneId)
+  static async getSceneByID(sceneId, json = false) {
+    let currentScene = await SceneCache.getScenes(sceneId)
     if (json) {
       return toJSON(currentScene)
     }
     return currentScene
   }
-
   static async insertScene(sceneData) {
-    buildSceneObj(sceneData)
-    return getAllScenesLocaly()
+    return await SceneCache.insertScene(sceneData)
   }
   static async updateScene(sceneId, sceneData) {
-    let currentScene = getObjectById(getAllScenesLocaly(), sceneId)
-    if (currentScene) {
-      updateSceneLocaly(currentScene, sceneData)
-    }
+    let currentScene = await SceneCache.updateScene(sceneId, sceneData)
     return toJSON(currentScene)
   }
   static async deleteScene(sceneId) {
-    let currentScene = getObjectById(getAllScenesLocaly(), sceneId)
-    if (currentScene.delete) {
-      currentScene.delete()
-    }
-    let scenes = deleteObject(getAllScenesLocaly(), sceneId)
-    scenes = updateAllScenesLocaly(scenes)
-    return convertScenesJSON(scenes)
+    let scenes = await SceneCache.deleteScene(sceneId)
+    return scenes.map((scene) => {
+      return toJSON(scene)
+    })
   }
 }
 

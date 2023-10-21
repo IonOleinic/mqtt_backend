@@ -1,10 +1,11 @@
 const Device = require('./device')
-
+const { mqttClient } = require('../mqttClient')
 class SmartSirenAlarm extends Device {
   constructor({
     id,
     name,
     img,
+    user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
@@ -15,6 +16,7 @@ class SmartSirenAlarm extends Device {
       id,
       name,
       img,
+      user_id,
       manufacter,
       mqtt_name,
       mqtt_group,
@@ -49,7 +51,7 @@ class SmartSirenAlarm extends Device {
       this.receive_batt_topic = `${this.mqtt_name}/7/get`
     }
   }
-  initDevice(mqttClient) {
+  initDevice() {
     this.subscribeForDeviceInfo(mqttClient)
     this.subscribeToTopic(mqttClient, this.receive_status_topic)
     this.subscribeToTopic(mqttClient, this.receive_temp_topic)
@@ -61,12 +63,12 @@ class SmartSirenAlarm extends Device {
     this.getDeviceInfo(mqttClient)
     this.getInitialState(mqttClient)
   }
-  updateOptions(mqttClient, newSound, newVolume, newDuration) {
+  updateOptions(newSound, newVolume, newDuration) {
     this.sendMqttReq(mqttClient, `${this.mqtt_name}/4/set`, newSound)
     this.sendMqttReq(mqttClient, `${this.mqtt_name}/5/set`, newVolume)
     this.sendMqttReq(mqttClient, `${this.mqtt_name}/6/set`, newDuration)
   }
-  getInitialState(mqttClient) {
+  getInitialState() {
     if (this.manufacter == 'tasmota') {
       this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
       //TODO
@@ -80,7 +82,7 @@ class SmartSirenAlarm extends Device {
       this.sendMqttReq(mqttClient, `${this.mqtt_name}/7/get`, '')
     }
   }
-  changePowerState(mqttClient, socket_nr = 1, status) {
+  changePowerState(socket_nr = 1, status) {
     if (status == 'TOGGLE') {
       status = this.status == 'OFF' ? 'ON' : 'OFF'
     }

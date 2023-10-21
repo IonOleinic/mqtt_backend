@@ -6,16 +6,7 @@ const express = require('express')
 const app = express()
 const http = require('http')
 const { Server } = require('socket.io')
-const {
-  getAllDevicesDB,
-  checkIfInScene,
-  getDeviceByMqttName,
-} = require('./helpers')
-const {
-  updateAllScenesLocaly,
-  updateAllDevicesLocaly,
-  getAllTempDevices,
-} = require('./localObjects')
+const { checkIfInScene } = require('./helpers')
 const { deviceRoutes } = require('./routes/deviceRoutes')
 const { sceneRoutes } = require('./routes/sceneRoutes')
 const { smartStripRoutes } = require('./routes/smartStripRoutes')
@@ -25,6 +16,8 @@ const { smartSirenAlarmRoutes } = require('./routes/smartSirenAlarmRoutes')
 const { smartDoorSensorRoutes } = require('./routes/smartDoorSensorRoutes')
 const { SceneService } = require('./services/sceneService')
 const { DeviceService } = require('./services/deviceService')
+const db = require('../database/sequelizeInstance')
+
 app.use(cors())
 app.use(bodyParser.json())
 app.use('/', deviceRoutes)
@@ -52,25 +45,23 @@ io.on('connection', (socket) => {
   })
 })
 
-mqttClient.on('connect', async () => {
-  let devicesFromDB = await getAllDevicesDB()
-  updateAllDevicesLocaly(devicesFromDB)
-  let scenes = SceneService.getAllScenes()
-  for (let i = 0; i < scenes.length; i++) {
-    if (scenes[i].initScene) {
-      scenes[i].initScene(mqttClient)
-    }
-  }
-  updateAllScenesLocaly(scenes)
+mqttClient.on('connect', () => {
+  console.log('MQTT Client connected.')
 })
-mqttClient.on('message', (topic, payload) => {
+mqttClient.on('message', async (topic, payload) => {
   let buffer = topic.split('/')
   payload = payload.toString()
   let currentDevice = undefined
   if (buffer[0] === 'stat' || buffer[0] === 'tele') {
-    currentDevice = getDeviceByMqttName(getAllTempDevices(), buffer[1])
+    currentDevice = DeviceService.getDeviceByMqttName(
+      buffer[1],
+      DeviceService.getAllTempDevices()
+    )
   } else {
-    currentDevice = getDeviceByMqttName(getAllTempDevices(), buffer[0])
+    currentDevice = DeviceService.getDeviceByMqttName(
+      buffer[0],
+      DeviceService.getAllTempDevices()
+    )
   }
   if (!currentDevice) {
     if (buffer[0] === 'stat' || buffer[0] === 'tele') {
@@ -82,12 +73,20 @@ mqttClient.on('message', (topic, payload) => {
   try {
     if (currentDevice) {
       currentDevice.processIncomingMessage(topic, payload, io)
-      checkIfInScene(currentDevice, SceneService.getAllScenes(), topic, payload)
+      checkIfInScene(
+        currentDevice,
+        await SceneService.getAllScenes(),
+        topic,
+        payload
+      )
     }
   } catch (error) {
     console.log(error)
   }
 })
-server.listen(5000, () => {
-  console.log('Server listening on port 5000...')
+
+db.sequelize.sync().then((req) => {
+  server.listen(5000, () => {
+    console.log('Server listening on port 5000...')
+  })
 })

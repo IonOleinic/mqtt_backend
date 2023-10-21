@@ -1,27 +1,67 @@
 const schedule = require('node-schedule')
 const Scene = require('./scene')
+const { mqttClient } = require('../mqttClient')
 class Schedule extends Scene {
-  constructor(name, device, dayOfWeek, hour, minute) {
-    super(name, 'schedule')
-    this.device_id = device.id
-    this.device_name = device.name
-    this.device_img = device.img
-    this.dayOfWeek = dayOfWeek
-    this.hour = hour
-    this.minute = minute
+  constructor({
+    id,
+    name,
+    active,
+    favorite,
+    date,
+    exec_device_id,
+    executable_topic,
+    executable_payload,
+    executable_text,
+    attributes = {},
+  }) {
+    super(
+      id,
+      name,
+      'schedule',
+      active,
+      favorite,
+      date,
+      exec_device_id,
+      executable_topic,
+      executable_payload,
+      executable_text
+    )
+    this.dayOfWeek = attributes.dayOfWeek
+    this.hour = attributes.hour
+    this.minute = attributes.minute
     this.job_id =
-      device.id + dayOfWeek.toString().replaceAll(',', '') + hour + minute
+      this.exec_device_id +
+      this.dayOfWeek.toString().replaceAll(',', '') +
+      this.hour +
+      this.minute
     this.repeatedlyJob = undefined
+    this.repeatedly()
   }
 
-  repeatedly(func, executable_text) {
+  repeatedly() {
     if (this.repeatedlyJob) {
       this.repeatedlyJob.cancel(true)
     }
-    this.executable_text = executable_text
+    let isActive = this.active
+    let executableTopic = this.executable_topic
+    let executablePayload = this.executable_payload
+    const func = () => {
+      if (isActive) {
+        mqttClient.publish(
+          executableTopic,
+          executablePayload,
+          { qos: 0, retain: false },
+          (error) => {
+            if (error) {
+              console.log(error)
+            }
+          }
+        )
+      }
+    }
     const repeat = this.isOnce() ? 'once' : this.dayOfWeek.toString()
     console.log(
-      `Schedule planned for ${this.device_name} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${executable_text}`
+      `Schedule planned for device id=${this.exec_device_id} on  ${this.hour}:${this.minute}, repeat:${repeat}  action -> ${this.executable_text}`
     )
     let rule = new schedule.RecurrenceRule()
     if (this.isOnce()) {
@@ -48,7 +88,7 @@ class Schedule extends Scene {
     if (this.repeatedlyJob) {
       this.repeatedlyJob.cancel(true)
     }
-    console.log(`Schedule with id=${this.job_id} was deleted.`)
+    console.log(`Schedule with id=${this.id} was deleted.`)
   }
   isOnce() {
     if (this.dayOfWeek[0] === '' || this.dayOfWeek === '') {

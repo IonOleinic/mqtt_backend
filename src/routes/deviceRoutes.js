@@ -38,24 +38,36 @@ deviceRoutes.put('/device/:id', async (req, res) => {
   }
 })
 deviceRoutes.get('/devices', async (req, res) => {
-  let devicesToReturn = await DeviceService.getAllDevices(req.query['filter'])
-  res.json(devicesToReturn)
+  try {
+    let devicesToReturn = await DeviceService.getAllDevices(req.query['filter'])
+    res.json(devicesToReturn)
+  } catch (error) {
+    console.log(error)
+    res.json({ succes: false, msg: 'Server error' })
+  }
 })
 deviceRoutes.delete('/device/:id', async (req, res) => {
   let devices = await DeviceService.getAllDevices()
-  if (req.params['id']) {
-    devices = await DeviceService.deleteDevice(req.params['id'])
-    res.json(devices)
-  } else {
-    res.json(devices)
+  try {
+    if (req.params['id']) {
+      devices = await DeviceService.deleteDevice(req.params['id'])
+    }
+  } catch (error) {
+    console.log(error)
   }
+  res.json(devices)
 })
 deviceRoutes.get('/device/:id', async (req, res) => {
-  let currentDevice = await DeviceService.getDeviceByID(req.params['id'])
-  if (currentDevice) {
-    res.json(currentDevice)
-  } else {
-    res.json({ succes: false, msg: "Device doesn't exist" })
+  try {
+    let currentDevice = await DeviceService.getDeviceByID(req.params['id'])
+    if (currentDevice) {
+      res.json(currentDevice)
+    } else {
+      res.json({ succes: false, msg: "Device doesn't exist" })
+    }
+  } catch (error) {
+    console.log(error)
+    res.json({ succes: false, msg: 'Server error' })
   }
 })
 deviceRoutes.get('/device/getInitState/:id', async (req, res) => {
