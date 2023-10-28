@@ -31,4 +31,4 @@ Horizon_IR = {
   openBekenBits: '0x1',
 }
 
-module.exports = Horizon_IR
+module.exports = { Horizon_IR }

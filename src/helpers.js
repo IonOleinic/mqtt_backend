@@ -45,15 +45,6 @@ const getDeviceByMqttName = (devices, mqttName) => {
   let filteredDevices = devices.filter((device) => device.mqtt_name == mqttName)
   return filteredDevices[0]
 }
-const getObjectById = (array, id) => {
-  let filteredArray = array.filter((object) => object.id == id)
-  return filteredArray[0]
-}
-const deleteObject = (array, objectId) => {
-  let filteredArray = array.filter((object) => object.id != objectId)
-  array = filteredArray
-  return array
-}
 
 module.exports = {
   checkIfInScene,
@@ -61,6 +52,4 @@ module.exports = {
   filterDeviceList,
   subscribeToTopic,
   getDeviceByMqttName,
-  getObjectById,
-  deleteObject,
 }

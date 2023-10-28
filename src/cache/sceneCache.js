@@ -1,6 +1,6 @@
 // sceneCache.js
 const { Scene } = require('../../models') // Sequelize Scene model
-const Horizon_IR = require('../devices/IRPresets.js')
+const { Horizon_IR } = require('../devices/IRPresets.js')
 const Schedule = require('../scenes/schedule.js')
 const DeviceScene = require('../scenes/deviceScene.js')
 const WeatherScene = require('../scenes/weatherScene.js')

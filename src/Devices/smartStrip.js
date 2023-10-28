@@ -29,6 +29,7 @@ class SmartStrip extends Device {
     this.nr_of_sockets = attributes.nr_of_sockets ? attributes.nr_of_sockets : 1
     this.cmnd_power_topics = []
     this.stat_power_topics = []
+    this.stat_sensor_topics = []
     this.power_status = []
     if (img === '') {
       switch (this.switch_type) {
@@ -78,34 +79,29 @@ class SmartStrip extends Device {
           break
       }
     }
-    this.sensor_status = {
-      StatusSNS: {
-        Time: '0000-00-00T00:00:00',
-        ENERGY: {
-          TotalStartTime: '2022-10-13T16:13:07',
-          Total: '-:-',
-          Yesterday: '-:-',
-          Today: '-:-',
-          Power: '-:-',
-          ApparentPower: '-:-',
-          ReactivePower: '-:-',
-          Factor: '-:-',
-          Voltage: '-:-',
-          Current: '-:-',
-        },
-      },
+    this.sensor_data = {
+      Total: '-:-',
+      Today: '-:-',
+      Power: '-:-',
+      Voltage: '-:-',
+      Current: '-:-',
     }
     for (let i = 0; i < this.nr_of_sockets; i++) {
       this.cmnd_power_topics.push(`cmnd/${mqtt_name}/POWER${i + 1}`)
       if (this.manufacter === 'openBeken') {
         this.cmnd_sensor_topic = `TODO`
         this.cmnd_sensor_payload = 'TODO'
-        this.stat_sensor_topic = `TODO`
         this.stat_power_topics.push(`${mqtt_name}/${i + 1}/get`)
+        this.stat_sensor_topics.push(`${mqtt_name}/voltage/get`)
+        this.stat_sensor_topics.push(`${mqtt_name}/power/get`)
+        this.stat_sensor_topics.push(`${mqtt_name}/current/get`)
+        this.stat_sensor_topics.push(`${mqtt_name}/voltage/get`)
+        this.stat_sensor_topics.push(`${mqtt_name}/energycounter_last_hour/get`)
+        this.stat_sensor_topics.push(`${mqtt_name}/energycounter/get`)
       } else if (this.manufacter === 'tasmota') {
         this.cmnd_sensor_topic = `cmnd/${mqtt_name}/STATUS`
         this.cmnd_sensor_payload = '8'
-        this.stat_sensor_topic = `stat/${mqtt_name}/STATUS8`
+        this.stat_sensor_topics.push(`stat/${mqtt_name}/STATUS8`)
         if (this.nr_of_sockets == 1) {
           this.stat_power_topics.push(`stat/${mqtt_name}/POWER`)
         } else {
@@ -123,8 +119,11 @@ class SmartStrip extends Device {
     for (let i = 0; i < this.stat_power_topics.length; i++) {
       this.subscribeToTopic(mqttClient, this.stat_power_topics[i])
     }
+    for (let i = 0; i < this.stat_sensor_topics.length; i++) {
+      this.subscribeToTopic(mqttClient, this.stat_sensor_topics[i])
+    }
     if (this.switch_type == 'plug') {
-      this.subscribeToTopic(mqttClient, this.stat_sensor_topic)
+      this.subscribeToTopic(mqttClient, this.stat_sensor_topics)
     }
     this.getDeviceInfo(mqttClient)
     this.getInitialState(mqttClient)
@@ -162,8 +161,37 @@ class SmartStrip extends Device {
         }
       }
     }
-    if (topic === this.stat_sensor_topic) {
-      this.sensor_status = JSON.parse(value)
+    if (this.stat_sensor_topics.includes(topic)) {
+      if (this.manufacter == 'tasmota') {
+        let sensor_energy = JSON.parse(value)
+        this.sensor_data.Voltage = sensor_energy.StatusSNS.ENERGY.Voltage
+        this.sensor_data.Current = sensor_energy.StatusSNS.ENERGY.Current
+        this.sensor_data.Power = sensor_energy.StatusSNS.ENERGY.Power
+        this.sensor_data.Today = sensor_energy.StatusSNS.ENERGY.Today
+        this.sensor_data.Total = sensor_energy.StatusSNS.ENERGY.Total
+      } else if (this.manufacter == 'openBeken') {
+        let buffer = topic.split('/')
+        switch (buffer[1]) {
+          case 'voltage':
+            this.sensor_data.Voltage = payload
+            break
+          case 'power':
+            this.sensor_data.Power = payload
+            break
+          case 'current':
+            this.sensor_data.Current = payload
+            break
+          case 'energycounter_last_hour':
+            this.sensor_data.Today = payload
+            break
+          case 'energycounter':
+            this.sensor_data.Total = payload
+            break
+
+          default:
+            break
+        }
+      }
     }
     if (io) {
       io.emit('update_device', {
