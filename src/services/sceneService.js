@@ -1,4 +1,5 @@
 const SceneCache = require('../cache/sceneCache')
+
 const toJSON = (object) => {
   var attrs = {}
   for (var attr in object) {
@@ -14,13 +15,7 @@ const toJSON = (object) => {
   }
   return attrs
 }
-// const convertScenesJSON = (scenes) => {
-//   let scenesToReturn = []
-//   for (let i = 0; i < scenes.length; i++) {
-//     scenesToReturn.push(toJSON(scenes[i]))
-//   }
-//   return scenesToReturn
-// }
+
 class SceneService {
   static async getAllScenes(json = false) {
     let scenes = await SceneCache.getScenes()

@@ -16,7 +16,6 @@ class TempIR {
   processIncomingMessage(topic, payload, io) {
     if (topic === this.receive_topic) {
       let received = payload.toString()
-      console.log(received)
       if (this.manufacter == 'tasmota') {
         let irReceived = JSON.parse(received).IrReceived
         this.protocol = irReceived.Protocol

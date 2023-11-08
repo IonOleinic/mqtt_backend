@@ -1,5 +1,4 @@
 const Device = require('./device')
-const { mqttClient } = require('../mqttClient')
 class SmartIR extends Device {
   constructor({
     id,
@@ -52,18 +51,18 @@ class SmartIR extends Device {
     }
   }
   initDevice() {
-    this.subscribeForDeviceInfo(mqttClient)
-    this.subscribeToTopic(mqttClient, this.receive_topic)
-    this.getDeviceInfo(mqttClient)
+    this.subscribeForDeviceInfo()
+    this.subscribeToTopic(this.receive_topic)
+    this.getDeviceInfo()
   }
   pressButton(btnCode) {
     if (btnCode) {
       let openBekenPayload = `${this.IR_protocol} ${this.bits} ${btnCode} ${this.repeats}`
       let tasmotaPayload = `{"Protocol":"${this.IR_protocol}", "Bits":${this.bits}, "Data":${btnCode}}`
       if (this.manufacter == 'tasmota') {
-        this.sendMqttReq(mqttClient, `${this.cmnd_topic}`, tasmotaPayload)
+        this.sendMqttReq(`${this.cmnd_topic}`, tasmotaPayload)
       } else if (this.manufacter == 'openBeken') {
-        this.sendMqttReq(mqttClient, `${this.cmnd_topic}`, openBekenPayload)
+        this.sendMqttReq(`${this.cmnd_topic}`, openBekenPayload)
       }
     }
   }

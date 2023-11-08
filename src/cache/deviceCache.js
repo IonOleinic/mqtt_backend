@@ -22,6 +22,7 @@ class DeviceCache {
     } catch (error) {
       console.log(error)
     }
+    return this.getDevices()
   }
   getDevices() {
     return Array.from(this.devices.values())
@@ -39,8 +40,7 @@ class DeviceCache {
       }
       return device
     } catch (error) {
-      console.log(error)
-      return undefined
+      throw error
     }
   }
   async insertDevice(deviceData) {
@@ -53,8 +53,7 @@ class DeviceCache {
       this.devices.set(deviceDB.id.toString(), device)
       return device
     } catch (error) {
-      console.log(error)
-      return deviceData
+      throw error
     }
   }
   async updateDevice(deviceId, deviceData) {
@@ -68,10 +67,10 @@ class DeviceCache {
         this.updateDeviceLocaly(device, deviceData)
         this.devices.set(deviceId, device)
       }
+      return device
     } catch (error) {
-      console.log(error)
+      throw error
     }
-    return device
   }
   async deleteDevice(deviceId) {
     try {
@@ -80,10 +79,10 @@ class DeviceCache {
         await deviceDB.destroy()
         this.devices.delete(deviceId)
       }
+      return Array.from(this.devices.values())
     } catch (error) {
-      console.log(error)
+      throw error
     }
-    return Array.from(this.devices.values())
   }
   getTempDevices() {
     return Array.from(this.tempDevices.values())
@@ -138,6 +137,7 @@ class DeviceCache {
     oldDevice.favorite = newDevice.favorite
     oldDevice.img = newDevice.img
     oldDevice.manufacter = newDevice.manufacter
+    oldDevice.available = newDevice.available
   }
 }
 

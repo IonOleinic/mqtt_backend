@@ -1,3 +1,4 @@
+const { mqttClient } = require('../mqttClient')
 class Device {
   constructor(
     id,
@@ -28,29 +29,32 @@ class Device {
     this.date = new Date()
     this.available = false
   }
-  subscribeForDeviceInfo(mqttClient) {
+  subscribeForDeviceInfo() {
+    this.info_topics = []
     if (this.manufacter == 'tasmota') {
       this.availability_topic = `tele/${this.mqtt_name}/LWT`
-      this.tasmota_info_topic = `stat/${this.mqtt_name}/STATUS5`
-      this.subscribeToTopic(mqttClient, this.tasmota_info_topic)
-      this.subscribeToTopic(mqttClient, this.availability_topic)
+      this.info_topics.push(`stat/${this.mqtt_name}/STATUS5`)
     } else if (this.manufacter == 'openBeken') {
       this.availability_topic = `${this.mqtt_name}/connected`
-      this.subscribeToTopic(mqttClient, `${this.mqtt_name}/ip`)
-      this.subscribeToTopic(mqttClient, `${this.mqtt_name}/mac`)
-      this.subscribeToTopic(mqttClient, this.availability_topic)
+      this.info_topics.push(`${this.mqtt_name}/ip`)
+      this.info_topics.push(`${this.mqtt_name}/mac`)
     }
+    for (let i = 0; i < this.info_topics.length; i++) {
+      this.subscribeToTopic(this.info_topics[i])
+    }
+    this.subscribeToTopic(this.availability_topic)
   }
-  subscribeToTopic(mqttClient, topicToSubcribe) {
+  subscribeToTopic(topicToSubcribe) {
     mqttClient.subscribe(`${topicToSubcribe}`, () => {
       console.log(`Client subscribed on ${topicToSubcribe}`)
     })
   }
-  getDeviceInfo(mqttClient) {
+  getDeviceInfo() {
     if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/STATUS`, '5')
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/STATUS`, '5')
     } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(mqttClient, `${this.mqtt_name}/ip/get`, '')
+      this.sendMqttReq(`${this.mqtt_name}/ip/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/mac/get`, '')  //the mac is sended only on boot --this is an issue that it cant be interogated
     }
   }
   processDeviceInfoMessage(topic, payload) {
@@ -67,22 +71,28 @@ class Device {
       } else {
         this.available = true
       }
-      if (this.manufacter == 'tasmota') {
-        if (topic === this.tasmota_info_topic) {
-          const temp = JSON.parse(value)
-          this.MAC = temp.StatusNET.Mac
-          this.IP = temp.StatusNET.IPAddress
-        }
-      } else if (this.manufacter == 'openBeken') {
-        if (topic === `${this.mqtt_name}/ip`) {
-          this.IP = value
-        } else if (topic === `${this.mqtt_name}/mac`) {
-          this.MAC = value
+      if (this.info_topics.includes(topic)) {
+        if (this.manufacter == 'tasmota') {
+          const info = JSON.parse(value)
+          this.MAC = info.StatusNET.Mac
+          this.IP = info.StatusNET.IPAddress
+        } else if (this.manufacter == 'openBeken') {
+          let buffer = topic.split('/')
+          switch (buffer[1]) {
+            case 'ip':
+              this.IP = value
+              break
+            case 'mac':
+              this.MAC = value
+              break
+            default:
+              break
+          }
         }
       }
     }
   }
-  sendMqttReq(mqttClient, topic, payload) {
+  sendMqttReq(topic, payload) {
     mqttClient.publish(topic, payload, { qos: 0, retain: false }, (error) => {
       if (error) {
         console.log(error)

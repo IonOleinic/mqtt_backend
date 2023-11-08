@@ -1,9 +1,7 @@
 const mqtt = require('mqtt')
 
-const mqttHost = process.env.MQTT_HOST
-const mqttPort = process.env.MQTT_PORT
 const clientId = `mqtt_${Math.random().toString(20).slice(3)}`
-const conectURL = `mqtt://${mqttHost}:${mqttPort}`
+const conectURL = `mqtt://${process.env.MQTT_HOST}:${process.env.MQTT_PORT}`
 const mqttClient = mqtt.connect(conectURL, {
   clientId,
   clean: true,
@@ -12,4 +10,5 @@ const mqttClient = mqtt.connect(conectURL, {
   password: 'tasmota',
   reconnectPeriod: 1000,
 })
+
 module.exports = { mqttClient }

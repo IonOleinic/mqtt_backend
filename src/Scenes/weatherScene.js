@@ -1,6 +1,5 @@
 const request = require('request')
 const Scene = require('./scene')
-const { mqttClient } = require('../mqttClient')
 class WeatherScene extends Scene {
   constructor({
     id,
@@ -85,29 +84,12 @@ class WeatherScene extends Scene {
     this.intervalFunc = setInterval(() => {
       if (this.active) {
         this.getCurrentTemp()
-        this.checkTemp(mqttClient)
+        this.checkTemp()
+        this.active = false
       }
     }, 10000)
   }
-  execute() {
-    try {
-      if (this.active) {
-        mqttClient.publish(
-          this.executable_topic,
-          this.executable_payload,
-          { qos: 0, retain: false },
-          (error) => {
-            if (error) {
-              console.log(error)
-            }
-          }
-        )
-        this.active = false
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
+
   delete() {
     if (this.intervalFunc) {
       clearInterval(this.intervalFunc)

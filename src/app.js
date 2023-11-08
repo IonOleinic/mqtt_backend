@@ -2,13 +2,17 @@ require('dotenv').config()
 const { mqttClient } = require('./mqttClient')
 const cors = require('cors')
 const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser')
 const express = require('express')
 const app = express()
 const http = require('http')
-const { Server } = require('socket.io')
-const { checkIfInScene } = require('./helpers')
+const io = require('./socketServer')
+const db = require('../database/sequelizeInstance')
 const { deviceRoutes } = require('./routes/deviceRoutes')
 const { sceneRoutes } = require('./routes/sceneRoutes')
+const { userRoutes } = require('./routes/userRoutes')
+const { loginRoutes } = require('./routes/loginRoutes')
+const { tokenRoutes } = require('./routes/tokenRoutes')
 const { smartStripRoutes } = require('./routes/smartStripRoutes')
 const { smartIRRoutes } = require('./routes/smartIRRoutes')
 const { smartLedRoutes } = require('./routes/smartLedRoutes')
@@ -16,10 +20,22 @@ const { smartSirenAlarmRoutes } = require('./routes/smartSirenAlarmRoutes')
 const { smartDoorSensorRoutes } = require('./routes/smartDoorSensorRoutes')
 const { SceneService } = require('./services/sceneService')
 const { DeviceService } = require('./services/deviceService')
-const db = require('../database/sequelizeInstance')
+const { checkIfInScene } = require('./helpers')
+const verifyJWT = require('./middleware/verifyJWT')
+const corsOptions = require('../config/corsOptions')
+const socketCorsOptions = require('../config/socketCorsOptions')
+const credentials = require('./middleware/credentials')
 
-app.use(cors())
+app.use(credentials)
+app.use(cors(corsOptions))
+
 app.use(bodyParser.json())
+app.use(cookieParser())
+
+app.use('/', loginRoutes)
+app.use('/', tokenRoutes)
+app.use(verifyJWT)
+app.use('/', userRoutes)
 app.use('/', deviceRoutes)
 app.use('/', sceneRoutes)
 app.use('/', smartStripRoutes)
@@ -27,27 +43,14 @@ app.use('/', smartIRRoutes)
 app.use('/', smartLedRoutes)
 app.use('/', smartSirenAlarmRoutes)
 app.use('/', smartDoorSensorRoutes)
+
 const server = http.createServer(app)
-const io = new Server(server, {
-  cors: {
-    origin: [process.env.FRONT_URL],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  },
-})
-io.on('connection', (socket) => {
-  console.log(
-    `A new conection from ${socket.handshake.headers.origin} with id:${socket.id}`
-  )
-  console.log(`Connected clients: ${io.engine.clientsCount}`)
-  socket.on('disconnect', () => {
-    console.log(`A client has been disconected.`)
-    console.log(`Connected clients: ${io.engine.clientsCount}`)
-  })
-})
+io.attach(server, socketCorsOptions)
 
 mqttClient.on('connect', () => {
   console.log('MQTT Client connected.')
 })
+
 mqttClient.on('message', async (topic, payload) => {
   let buffer = topic.split('/')
   payload = payload.toString()

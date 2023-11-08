@@ -1,5 +1,4 @@
 // userModel.js
-
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
     'User',
@@ -25,6 +24,9 @@ module.exports = (sequelize, DataTypes) => {
       },
       gender: {
         type: DataTypes.STRING,
+      },
+      refresh_token: {
+        type: DataTypes.STRING(512),
       },
     },
     { timestamps: false }

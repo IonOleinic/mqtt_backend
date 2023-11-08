@@ -38,8 +38,7 @@ class SceneCache {
       }
       return scene
     } catch (error) {
-      console.log(error)
-      return undefined
+      throw error
     }
   }
   async insertScene(sceneData) {
@@ -54,8 +53,7 @@ class SceneCache {
       this.scenes.set(sceneDB.id.toString(), scene)
       return scene
     } catch (error) {
-      console.log(error)
-      return sceneData
+      throw error
     }
   }
   async updateScene(sceneId, sceneData) {
@@ -70,8 +68,7 @@ class SceneCache {
       }
       return scene
     } catch (error) {
-      console.log(error)
-      return sceneData
+      throw error
     }
   }
   async deleteScene(sceneId) {
@@ -86,11 +83,10 @@ class SceneCache {
         }
         this.scenes.delete(sceneId)
       }
+      return Array.from(this.scenes.values())
     } catch (error) {
-      console.log(error)
+      throw error
     }
-
-    return Array.from(this.scenes.values())
   }
   async deleteExpiredSchedules() {
     let copyOfScenes = Array.from(this.scenes.values())

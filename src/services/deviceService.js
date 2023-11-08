@@ -17,6 +17,10 @@ class DeviceService {
   static deleteTempDevice(tempDeviceId) {
     return DeviceCache.deleteTempDevice(tempDeviceId)
   }
+  static async getAllDevicesDB() {
+    let devicesToReturn = await DeviceCache.initDeviceCache()
+    return devicesToReturn
+  }
   static async getAllDevices(filter) {
     let devicesToReturn = await DeviceCache.getDevices()
     if (filter) {

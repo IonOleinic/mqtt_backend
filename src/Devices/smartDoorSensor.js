@@ -1,5 +1,5 @@
 const Device = require('./device')
-const { mqttClient } = require('../mqttClient')
+
 class SmartDoorSensor extends Device {
   constructor({
     id,
@@ -40,23 +40,23 @@ class SmartDoorSensor extends Device {
     }
   }
   initDevice() {
-    this.subscribeForDeviceInfo(mqttClient)
-    this.subscribeToTopic(mqttClient, this.receive_status_topic)
-    this.getDeviceInfo(mqttClient)
-    this.getInitialState(mqttClient)
+    this.subscribeForDeviceInfo()
+    this.subscribeToTopic(this.receive_status_topic)
+    this.getDeviceInfo()
+    this.getInitialState()
   }
   getInitialState() {
     if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
     } else {
-      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
+      this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
     }
   }
   sendToggleReq() {
     if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, 'TOGGLE')
     } else {
-      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/set`, 'TOGGLE')
+      this.sendMqttReq(`${this.mqtt_name}/1/set`, 'TOGGLE')
     }
   }
   processIncomingMessage(topic, payload, io) {

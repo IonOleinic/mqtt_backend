@@ -1,3 +1,4 @@
+const { mqttClient } = require('../mqttClient')
 class Scene {
   constructor(
     id,
@@ -21,6 +22,24 @@ class Scene {
     this.favorite = favorite
     this.active = active
     this.scene_type = scene_type
+  }
+  execute() {
+    try {
+      if (this.active) {
+        mqttClient.publish(
+          this.executable_topic,
+          this.executable_payload,
+          { qos: 0, retain: false },
+          (error) => {
+            if (error) {
+              console.log(error)
+            }
+          }
+        )
+      }
+    } catch (error) {
+      console.log(error)
+    }
   }
 }
 

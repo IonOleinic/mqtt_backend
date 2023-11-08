@@ -21,7 +21,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       mqtt_name: {
         type: DataTypes.STRING,
-        unique: true,
       },
       mqtt_group: {
         type: DataTypes.STRING,
@@ -47,8 +46,5 @@ module.exports = (sequelize, DataTypes) => {
     },
     { timestamps: false }
   )
-
-  // Define a foreign key relationship to User
-  // User.hasMany(Device, { foreignKey: 'user_id' })
   return Device
 }

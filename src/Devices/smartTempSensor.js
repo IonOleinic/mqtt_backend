@@ -1,5 +1,4 @@
 const Device = require('./device')
-const { mqttClient } = require('../mqttClient')
 class SmartTempSensor extends Device {
   constructor({
     id,
@@ -41,20 +40,20 @@ class SmartTempSensor extends Device {
     }
   }
   initDevice() {
-    this.subscribeForDeviceInfo(mqttClient)
-    this.subscribeToTopic(mqttClient, this.receive_temp_topic)
-    this.subscribeToTopic(mqttClient, this.receive_hum_topic)
-    this.subscribeToTopic(mqttClient, this.receive_batt_topic)
-    this.getDeviceInfo(mqttClient)
-    this.getInitialState(mqttClient)
+    this.subscribeForDeviceInfo()
+    this.subscribeToTopic(this.receive_temp_topic)
+    this.subscribeToTopic(this.receive_hum_topic)
+    this.subscribeToTopic(this.receive_batt_topic)
+    this.getDeviceInfo()
+    this.getInitialState()
   }
-  getInitialState(mqttClient) {
+  getInitialState() {
     if (this.manufacter == 'tasmota') {
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(mqttClient, `${this.mqtt_name}/1/get`, '')
-      this.sendMqttReq(mqttClient, `${this.mqtt_name}/2/get`, '')
-      this.sendMqttReq(mqttClient, `${this.mqtt_name}/3/get`, '')
+      this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
+      this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
+      this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
     }
   }
   processIncomingMessage(topic, payload, io) {

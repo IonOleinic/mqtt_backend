@@ -1,5 +1,4 @@
 const Device = require('./device')
-const { mqttClient } = require('../mqttClient')
 class SmartStrip extends Device {
   constructor({
     id,
@@ -80,11 +79,11 @@ class SmartStrip extends Device {
       }
     }
     this.sensor_data = {
-      Total: '-:-',
-      Today: '-:-',
-      Power: '-:-',
-      Voltage: '-:-',
-      Current: '-:-',
+      Today: '---',
+      Total: '--',
+      Power: '--',
+      Voltage: '--',
+      Current: '--',
     }
     for (let i = 0; i < this.nr_of_sockets; i++) {
       this.cmnd_power_topics.push(`cmnd/${mqtt_name}/POWER${i + 1}`)
@@ -112,21 +111,20 @@ class SmartStrip extends Device {
     }
   }
   changePowerState(socket, state) {
-    this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/POWER${socket}`, state)
+    this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER${socket}`, state)
   }
   initDevice() {
-    this.subscribeForDeviceInfo(mqttClient)
+    this.subscribeForDeviceInfo()
     for (let i = 0; i < this.stat_power_topics.length; i++) {
-      this.subscribeToTopic(mqttClient, this.stat_power_topics[i])
-    }
-    for (let i = 0; i < this.stat_sensor_topics.length; i++) {
-      this.subscribeToTopic(mqttClient, this.stat_sensor_topics[i])
+      this.subscribeToTopic(this.stat_power_topics[i])
     }
     if (this.switch_type == 'plug') {
-      this.subscribeToTopic(mqttClient, this.stat_sensor_topics)
+      for (let i = 0; i < this.stat_sensor_topics.length; i++) {
+        this.subscribeToTopic(this.stat_sensor_topics[i])
+      }
     }
-    this.getDeviceInfo(mqttClient)
-    this.getInitialState(mqttClient)
+    this.getDeviceInfo()
+    this.getInitialState()
   }
   updateReq(reqTopic) {
     if (this.manufacter === 'openBeken') {
@@ -135,7 +133,7 @@ class SmartStrip extends Device {
       }
     } else if (this.manufacter === 'tasmota') {
       if (reqTopic === 'STATUS') {
-        this.sendMqttReq(mqttClient, `cmnd/${this.mqtt_name}/STATUS`, '8')
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/STATUS`, '8')
       }
     }
   }
@@ -144,10 +142,10 @@ class SmartStrip extends Device {
       if (this.manufacter === 'tasmota') {
         this.changePowerState(i + 1, '')
       } else if (this.manufacter === 'openBeken') {
-        this.sendMqttReq(mqttClient, `${this.mqtt_name}/${i + 1}/get`, '')
+        this.sendMqttReq(`${this.mqtt_name}/${i + 1}/get`, '')
       }
     }
-    this.updateReq(mqttClient, 'STATUS')
+    this.updateReq('STATUS')
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
