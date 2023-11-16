@@ -1,5 +1,6 @@
 const request = require('request')
 const Scene = require('./scene')
+
 class WeatherScene extends Scene {
   constructor({
     id,
@@ -27,65 +28,72 @@ class WeatherScene extends Scene {
     )
     this.comparison_sign = attributes.comparison_sign
     this.target_temperature = Number(attributes.target_temperature)
-    this.current_temperature = 0
-    this.city = 'suceava'
-    this.api_key = '503946cd0949183d14afe29b6673cc5c'
+    this.location = attributes.location
+    this.country = attributes.location?.country
+    this.city = attributes.location?.city
   }
-  getCurrentTemp() {
+  async getCurrentTemp() {
     try {
-      let url = `https://api.openweathermap.org/data/2.5/weather?q=${this.city}&units=metric&appid=${this.api_key}`
-      request(url, (err, response, body) => {
-        if (err) {
-          console.log('error:', err)
-        } else {
-          let result = JSON.parse(body)
-          this.current_temperature = result.main.temp
-        }
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${this.location?.latitude}&lon=${this.location?.longitude}&units=metric&appid=${process.env.OPEN_WEATHER_API}`
+      return new Promise((resolve, reject) => {
+        request(url, (err, response, body) => {
+          if (err) {
+            console.log('error:', err)
+            reject(err) // Reject the promise with the error
+          } else {
+            const result = JSON.parse(body)
+            const currentTemperature = result?.main?.temp
+            resolve(currentTemperature) // Resolve the promise with the temperature
+          }
+        })
       })
     } catch (error) {
       console.log(error)
     }
   }
-  checkTemp() {
+  checkTemp(current_temperature) {
     switch (this.comparison_sign) {
       case '>':
-        if (this.current_temperature > this.target_temperature) {
+        if (current_temperature > this.target_temperature) {
           this.execute()
         }
         break
       case '>=':
-        if (this.current_temperature >= this.target_temperature) {
+        if (current_temperature >= this.target_temperature) {
           this.execute()
         }
         break
       case '<':
-        if (this.current_temperature < this.target_temperature) {
+        if (current_temperature < this.target_temperature) {
           this.execute()
         }
         break
       case '<=':
-        if (this.current_temperature <= this.target_temperature) {
+        if (current_temperature <= this.target_temperature) {
           this.execute()
         }
         break
       case '=':
-        if (this.current_temperature == this.target_temperature) {
+        if (current_temperature == this.target_temperature) {
           this.execute()
         }
         break
       default:
-        if (this.current_temperature == this.target_temperature) {
+        if (current_temperature == this.target_temperature) {
           this.execute()
         }
         break
     }
   }
   initScene() {
-    this.intervalFunc = setInterval(() => {
-      if (this.active) {
-        this.getCurrentTemp()
-        this.checkTemp()
-        this.active = false
+    this.intervalFunc = setInterval(async () => {
+      try {
+        if (this.active) {
+          const current_temperature = await this.getCurrentTemp()
+          this.checkTemp(current_temperature)
+        }
+      } catch (error) {
+        console.log(error)
       }
     }, 10000)
   }
