@@ -11,6 +11,10 @@ module.exports = (sequelize, DataTypes) => {
       scene_type: {
         type: DataTypes.STRING,
       },
+      user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
       active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,

@@ -1,41 +1,17 @@
 const Device = require('./device')
+let timeout_instance = undefined
 class SmartMotionSensor extends Device {
-  constructor({
-    id,
-    name,
-    img,
-    user_id,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    favorite,
-    attributes = {},
-  }) {
-    super(
-      id,
-      name,
-      img,
-      user_id,
-      manufacter,
-      mqtt_name,
-      mqtt_group,
-      'smartMotionSensor',
-      true,
-      true,
-      favorite
-    )
-    this.auto_off = attributes.auto_off ? attributes.auto_off : false
-    this.status = attributes.status ? attributes.status : 'No Motion'
-    this.battery_level = attributes.battery_level ? attributes.battery_level : 0
+  constructor(deviceData) {
+    super(deviceData)
+    const { auto_off, status, battery_level } = deviceData.attributes
+    this.auto_off = auto_off ? auto_off : false
+    this.status = status ? status : 'No Motion'
+    this.battery_level = battery_level ? battery_level : 0
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
     } else if (this.manufacter == 'openBeken') {
       this.receive_status_topic = `${this.mqtt_name}/1/get`
       this.receive_batt_topic = `${this.mqtt_name}/4/get`
-    }
-    if (img === '') {
-      this.img =
-        'https://images.tuyacn.com/ecommerce/15900673368e2805e115e.png?x-oss-process=image/resize,w_510'
     }
   }
   initDevice() {
@@ -61,19 +37,18 @@ class SmartMotionSensor extends Device {
     if (topic === this.receive_status_topic) {
       if (value == 'ON' || value == '1') {
         this.status = 'Motion'
+        if (timeout_instance) {
+          clearTimeout(timeout_instance)
+          timeout_instance = null
+        }
         if (this.auto_off == false) {
-          clearTimeout(this.timeout_instance)
-          setTimeout(() => {
+          this.auto_off = true
+          timeout_instance = setTimeout(() => {
             if (this.status == 'Motion') {
               this.status = 'No Motion'
-              if (io) {
-                io.emit('update_device', {
-                  device: this,
-                })
-              }
+              this.sendWithSocket(io)
             }
           }, 40000)
-          this.auto_off = true
         }
       } else if (value == 'OFF' || value == '0') {
         this.status = 'No Motion'
@@ -91,11 +66,7 @@ class SmartMotionSensor extends Device {
         this.battery_level = 0
       }
     }
-    if (io) {
-      io.emit('update_device', {
-        device: this,
-      })
-    }
+    this.sendWithSocket(io)
   }
 }
 module.exports = SmartMotionSensor

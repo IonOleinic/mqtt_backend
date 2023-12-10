@@ -1,5 +1,5 @@
-const { mqttClient } = require('../mqttClient')
-const { subscribeToTopic } = require('../helpers')
+const { mqttClient } = require('../mqtt/mqttClient.js')
+const { subscribeToTopic } = require('../helpers/helpers.js')
 const TempIR = require('../devices/tempIR.js')
 const { DeviceService } = require('../services/deviceService')
 
@@ -23,11 +23,11 @@ class SmartIRController {
       let tempIR = new TempIR(req.query['manufacter'], req.query['mqtt_name'])
       DeviceService.insertTempDevice(tempIR)
       subscribeToTopic(mqttClient, tempIR.receive_topic)
+      res.status(201).json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ Succes: false })
+      res.json({ succes: false })
     }
-    res.json({ Succes: true })
   }
 }
 module.exports = new SmartIRController()

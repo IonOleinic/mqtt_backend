@@ -1,10 +1,11 @@
 const schedule = require('node-schedule')
 const Scene = require('./scene')
-const { mqttClient } = require('../mqttClient')
+const { mqttClient } = require('../mqtt/mqttClient')
 class Schedule extends Scene {
   constructor({
     id,
     name,
+    user_id,
     active,
     favorite,
     date,
@@ -17,6 +18,7 @@ class Schedule extends Scene {
     super(
       id,
       name,
+      user_id,
       'schedule',
       active,
       favorite,

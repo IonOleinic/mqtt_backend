@@ -1,6 +1,7 @@
+const allowedOrigins = require('./allowedOrigins')
 const socketCorsOptions = {
   cors: {
-    origin: [process.env.FRONT_URL],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   },
 }

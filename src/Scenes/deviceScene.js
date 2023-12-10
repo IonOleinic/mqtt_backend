@@ -3,6 +3,7 @@ class DeviceScene extends Scene {
   constructor({
     id,
     name,
+    user_id,
     active,
     favorite,
     date,
@@ -15,6 +16,7 @@ class DeviceScene extends Scene {
     super(
       id,
       name,
+      user_id,
       'deviceScene',
       active,
       favorite,

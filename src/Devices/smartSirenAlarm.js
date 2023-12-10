@@ -1,43 +1,24 @@
 const Device = require('./device')
 class SmartSirenAlarm extends Device {
-  constructor({
-    id,
-    name,
-    img,
-    user_id,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    favorite,
-    attributes = {},
-  }) {
-    super(
-      id,
-      name,
-      img,
-      user_id,
-      manufacter,
-      mqtt_name,
-      mqtt_group,
-      'smartSirenAlarm',
-      true,
-      false,
-      favorite
-    )
-    this.status = attributes.status ? attributes.status : 'OFF'
-    this.temperature = attributes.temperature ? attributes.temperature : 0
-    this.humidity = attributes.humidity ? attributes.humidity : 0
-    this.sound = attributes.sound ? attributes.sound : 5
-    this.volume = attributes.volume ? attributes.volume : 2
-    this.sound_duration = attributes.sound_duration
-      ? attributes.sound_duration
-      : 10
-    this.battery_level = attributes.battery_level ? attributes.battery_level : 0
+  constructor(deviceData) {
+    super(deviceData)
+    const {
+      status,
+      temperature,
+      humidity,
+      volume,
+      sound,
+      sound_duration,
+      battery_level,
+    } = deviceData.attributes
+    this.status = status ? status : 'OFF'
+    this.temperature = temperature ? temperature : 0
+    this.humidity = humidity ? humidity : 0
+    this.sound = sound ? sound : 5
+    this.volume = volume ? volume : 2
+    this.sound_duration = sound_duration ? sound_duration : 10
+    this.battery_level = battery_level ? battery_level : 0
     this.cmnd_status_topic = `cmnd/${this.mqtt_name}/POWER`
-    if (img === '') {
-      this.img =
-        'https://m.media-amazon.com/images/I/51uN7WDJMNS.__AC_SX300_SY300_QL70_ML2_.jpg'
-    }
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
     } else if (this.manufacter == 'openBeken') {
@@ -73,12 +54,12 @@ class SmartSirenAlarm extends Device {
       //TODO
     } else if (this.manufacter == 'openBeken') {
       this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/4/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/5/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/6/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/7/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/4/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/5/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/6/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/7/get`, '')
     }
   }
   changePowerState(socket_nr = 1, status) {
@@ -113,12 +94,7 @@ class SmartSirenAlarm extends Device {
     } else if (topic === this.receive_batt_topic) {
       this.battery_level = Number(value)
     }
-
-    if (io) {
-      io.emit('update_device', {
-        device: this,
-      })
-    }
+    this.sendWithSocket(io)
   }
 }
 module.exports = SmartSirenAlarm

@@ -1,5 +1,5 @@
 // deviceModel.js
-
+const Sequelize = require('sequelize')
 module.exports = (sequelize, DataTypes) => {
   const Device = sequelize.define(
     'Device',
@@ -7,9 +7,6 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING,
         allowNull: false,
-      },
-      img: {
-        type: DataTypes.STRING,
       },
       user_id: {
         type: DataTypes.INTEGER,
@@ -28,17 +25,13 @@ module.exports = (sequelize, DataTypes) => {
       device_type: {
         type: DataTypes.STRING,
       },
-      battery: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-      read_only: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
       favorite: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
+      },
+      date: {
+        type: DataTypes.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
       attributes: {
         type: DataTypes.JSON, // Store attributes as JSON data

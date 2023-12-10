@@ -1,30 +1,27 @@
-const { mqttClient } = require('../mqttClient')
+const { mqttClient } = require('../mqtt/mqttClient')
 const { DeviceService } = require('../services/deviceService')
 
 class DeviceController {
   async createDevice(req, res) {
     let deviceData = req.body
-    let result = { succes: false, msg: 'ERROR' }
+    deviceData.user_id = req.query['user_id']
     try {
       if (
         (await DeviceService.getDeviceByMqttName(deviceData.mqtt_name)) &&
         deviceData.device_type !== 'smartIR'
       ) {
-        result = { succes: false, msg: 'Device already exists!' }
+        res.status(409).json({ msg: 'Device already exists!' })
       } else {
         await DeviceService.insertDevice(deviceData)
-        result = { succes: true, msg: 'Device added with succes' }
+        res.status(201).json({ msg: 'Device added with success' })
       }
     } catch (error) {
       console.log(error)
-      result = { succes: false, msg: 'Error ocurred!' }
+      res.status(500).json({ succes: false, msg: 'Error ocurred!' })
     }
-
-    res.json(result)
   }
   async updateDevice(req, res) {
     let deviceData = req.body
-    let currentDevice = DeviceService.getDeviceByID(req.params['id'])
     try {
       let updatedDevice = await DeviceService.updateDevice(
         req.params['id'],
@@ -33,12 +30,13 @@ class DeviceController {
       res.json(updatedDevice)
     } catch (error) {
       console.log(error)
-      res.json(currentDevice)
+      res.json(deviceData)
     }
   }
   async getDevices(req, res) {
     try {
       let devicesToReturn = await DeviceService.getAllDevices(
+        req.query['user_id'],
         req.query['filter']
       )
       res.json(devicesToReturn)
@@ -53,40 +51,55 @@ class DeviceController {
       if (currentDevice) {
         res.json(currentDevice)
       } else {
-        res.json({ succes: false, msg: "Device doesn't exist" })
+        res.status(404).json({ msg: 'Device not found!' })
       }
     } catch (error) {
       console.log(error)
-      res.json({ succes: false, msg: 'Server error' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async deleteDevice(req, res) {
-    let devices = await DeviceService.getAllDevices()
     try {
       if (req.params['id']) {
-        devices = await DeviceService.deleteDevice(req.params['id'])
+        await DeviceService.deleteDevice(req.params['id'])
       }
     } catch (error) {
       console.log(error)
     }
+    let devices = await DeviceService.getAllDevices(req.query['user_id'])
     res.json(devices)
   }
   async getInitState(req, res) {
-    let currentDevice = await DeviceService.getDeviceByID(req.params['id'])
-    if (currentDevice.getInitialState) {
-      currentDevice.getInitialState(mqttClient)
-      res.json({ succes: true })
-    } else {
-      res.json({ succes: false, msg: "Device doesn't exist" })
+    try {
+      let currentDevice = await DeviceService.getDeviceByID(req.params['id'])
+      if (currentDevice.getInitialState) {
+        currentDevice.getInitialState(mqttClient)
+        res.json({ succes: true })
+      } else {
+        res.status(404).json({ msg: "Device doesn't exist" })
+      }
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
     }
   }
   async getMqttGroups(req, res) {
-    let mqttGroups = await DeviceService.getMqttGroups()
-    res.json(mqttGroups)
+    try {
+      let mqttGroups = await DeviceService.getMqttGroups(req.query['user_id'])
+      res.json(mqttGroups)
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
+    }
   }
   async getDeviceTypes(req, res) {
-    let deviceTypes = await DeviceService.getDeviceTypes()
-    res.json(deviceTypes)
+    try {
+      let deviceTypes = await DeviceService.getDeviceTypes()
+      res.json(deviceTypes)
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
+    }
   }
 }
 

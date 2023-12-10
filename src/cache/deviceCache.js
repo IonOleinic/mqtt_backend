@@ -24,8 +24,12 @@ class DeviceCache {
     }
     return this.getDevices()
   }
-  getDevices() {
-    return Array.from(this.devices.values())
+  getDevices(userId) {
+    const allDevices = Array.from(this.devices.values())
+    if (userId) {
+      return allDevices.filter((device) => device.user_id == userId)
+    }
+    return allDevices
   }
   async getDevice(deviceId) {
     try {
@@ -44,30 +48,47 @@ class DeviceCache {
     }
   }
   async insertDevice(deviceData) {
+    let deviceDB = undefined
     deviceData.name = deviceData.name
       ? deviceData.name
       : 'Device ' + Math.random().toString(16).slice(2, 7)
     try {
-      const deviceDB = await Device.create(deviceData)
+      deviceDB = await Device.create(deviceData)
       let device = this.buildDeviceObj(deviceDB.dataValues)
       this.devices.set(deviceDB.id.toString(), device)
       return device
     } catch (error) {
+      if (deviceDB) deviceDB.destroy()
       throw error
     }
   }
   async updateDevice(deviceId, deviceData) {
     let device = deviceData
     deviceData.mqtt_group = deviceData.mqtt_group.toString()
+    // this.constructAttributes(deviceData)
     try {
       const deviceDB = await Device.findByPk(deviceId)
       if (deviceDB) {
         await deviceDB.update(deviceData)
-        device = this.devices.get(deviceId)
+        deviceData.mqtt_group = deviceData.mqtt_group.split(',')
+        device = this.devices.get(deviceId.toString())
         this.updateDeviceLocaly(device, deviceData)
         this.devices.set(deviceId, device)
       }
       return device
+    } catch (error) {
+      throw error
+    }
+  }
+  async updateDeviceOnlyDB(deviceId, deviceData) {
+    deviceData.mqtt_group = deviceData.mqtt_group.toString()
+    this.constructAttributes(deviceData)
+    try {
+      const deviceDB = await Device.findByPk(deviceId)
+      if (deviceDB) {
+        await deviceDB.update(deviceData)
+      }
+      return deviceData
     } catch (error) {
       throw error
     }
@@ -79,7 +100,7 @@ class DeviceCache {
         await deviceDB.destroy()
         this.devices.delete(deviceId)
       }
-      return Array.from(this.devices.values())
+      return true
     } catch (error) {
       throw error
     }
@@ -138,6 +159,32 @@ class DeviceCache {
     oldDevice.img = newDevice.img
     oldDevice.manufacter = newDevice.manufacter
     oldDevice.available = newDevice.available
+  }
+  constructAttributes(deviceData) {
+    if (deviceData.device_type === 'smartTempSensor') {
+      deviceData.attributes = {
+        temperature: deviceData.temperature,
+        humidity: deviceData.humidity,
+        battery_level: deviceData.battery_level,
+      }
+    }
+    if (deviceData.device_type === 'smartSirenAlarm') {
+      deviceData.attributes = {
+        status: deviceData.status,
+        temperature: deviceData.temperature,
+        humidity: deviceData.humidity,
+        volume: deviceData.volume,
+        sound: deviceData.sound,
+        sound_duration: deviceData.sound_duration,
+        battery_level: deviceData.battery_level,
+      }
+    }
+    if (deviceData.device_type === 'smartDoorSensor') {
+      deviceData.attributes = {
+        status: deviceData.status,
+        battery_level: deviceData.battery_level,
+      }
+    }
   }
 }
 

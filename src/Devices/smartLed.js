@@ -1,55 +1,25 @@
 const Device = require('./device')
 class SmartLed extends Device {
-  constructor({
-    id,
-    name,
-    img,
-    user_id,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    favorite,
-    attributes = {},
-  }) {
-    super(
-      id,
-      name,
-      img,
-      user_id,
-      manufacter,
-      mqtt_name,
-      mqtt_group,
-      'smartLed',
-      false,
-      false,
-      favorite
-    )
-    this.led_type = attributes.led_type ? attributes.led_type : 'rgb'
-    this.sub_type = attributes.sub_type ? attributes.sub_type : 'ledStrip'
-    this.color = attributes.color ? attributes.color : '555555'
-    this.dimmer = attributes.dimmer ? attributes.dimmer : 100
-    this.speed = attributes.speed ? attributes.speed : 1
-    this.scheme = attributes.scheme ? attributes.scheme : '0'
-    this.status = attributes.status ? attributes.status : 'OFF'
-    this.palette = attributes.palette
-      ? attributes.palette.split(' ')
-      : ['', '', '', '', '']
-    if (img) {
-      this.img = img
-    } else {
-      if (this.sub_type === 'ledStrip') {
-        this.img =
-          'https://www.geewiz.co.za/190600-large_default/mini-rgb-wifi-led-controller-works-with-alexa-and-google-home.jpg'
-      } else {
-        if (this.led_type.includes('rgb')) {
-          this.img =
-            'https://www.hicolead.com/cdn/shop/products/18.png?v=1666423551&width=1039'
-        } else {
-          this.img =
-            'https://5.imimg.com/data5/YT/QF/BN/SELLER-71396138/led-bulb-raw-material-250x250.jpg'
-        }
-      }
-    }
+  constructor(deviceData) {
+    super(deviceData)
+    const {
+      led_type,
+      sub_type,
+      color,
+      scheme,
+      dimmer,
+      speed,
+      status,
+      palette,
+    } = deviceData.attributes
+    this.led_type = led_type ? led_type : 'rgb'
+    this.sub_type = sub_type ? sub_type : 'ledStrip'
+    this.color = color ? color : '555555'
+    this.dimmer = dimmer ? dimmer : 100
+    this.speed = speed ? speed : 1
+    this.scheme = scheme ? scheme : '0'
+    this.status = status ? status : 'OFF'
+    this.palette = palette ? palette : ['', '', '', '', '']
     if (this.manufacter == 'tasmota') {
       this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
@@ -195,11 +165,7 @@ class SmartLed extends Device {
     } else if (topic === this.receive_dimmer_topic) {
       this.dimmer = value
     }
-    if (io) {
-      io.emit('update_device', {
-        device: this,
-      })
-    }
+    this.sendWithSocket(io)
   }
 }
 module.exports = SmartLed

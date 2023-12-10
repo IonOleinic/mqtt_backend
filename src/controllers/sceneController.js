@@ -1,53 +1,68 @@
 const { SceneService } = require('../services/sceneService')
-
+const { mapSceneToViewModel } = require('../mappers/sceneMapper')
 class SceneController {
   async getScenes(req, res) {
-    let scenes = await SceneService.getAllScenes(true)
-    res.json(scenes)
+    try {
+      let scenes = await SceneService.getAllScenes(req.query['user_id'])
+      res.json(
+        scenes.map((scene) => {
+          return mapSceneToViewModel(scene)
+        })
+      )
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
+    }
   }
   async getScene(req, res) {
     try {
-      let currentScene = await SceneService.getSceneByID(
-        req.params['id'],
-        (json = true)
-      )
-      res.json(currentScene)
+      let currentScene = await SceneService.getSceneByID(req.params['id'])
+      if (currentScene) {
+        res.json(mapSceneToViewModel(currentScene))
+      } else {
+        res.status(404).json({ msg: 'Scene not found!' })
+      }
     } catch (error) {
-      res.json({ succes: false, msg: "Scene doesn't exist" })
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
     }
   }
   async createScene(req, res) {
     let sceneData = req.body
+    sceneData.user_id = req.query['user_id']
     try {
       await SceneService.insertScene(sceneData)
-      res.json({ succes: true })
+      res.sendStatus(201)
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Error occured!' })
     }
   }
   async updateScene(req, res) {
+    let sceneData = req.body
     try {
       let updatedScene = await SceneService.updateScene(
         req.params['id'],
-        req.body
+        sceneData
       )
-      res.json(updatedScene)
+      res.json(mapSceneToViewModel(updatedScene))
     } catch (error) {
       console.log(error)
-      let currentScene = await SceneService.getSceneByID(req.params['id'])
-      res.json(currentScene)
+      res.json(sceneData)
     }
   }
   async deleteScene(req, res) {
     try {
-      let scenes = await SceneService.deleteScene(req.params['id'])
-      res.json(scenes)
+      await SceneService.deleteScene(req.params['id'])
     } catch (error) {
       console.log(error)
-      let scenes = await SceneService.getAllScenes()
-      res.json(scenes)
     }
+    let scenes = await SceneService.getAllScenes(req.query['user_id'])
+    res.json(
+      scenes.map((scene) => {
+        return mapSceneToViewModel(scene)
+      })
+    )
   }
 }
 

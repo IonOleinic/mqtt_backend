@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt')
 const { UserService } = require('../services/userService')
 
 class LoginController {
@@ -6,7 +7,11 @@ class LoginController {
     try {
       let currentUser = await UserService.getUserByEmail(req.body['email'])
       if (currentUser) {
-        if (currentUser.password === req.body['password']) {
+        const match = await bcrypt.compare(
+          req.body['password'],
+          currentUser.password
+        )
+        if (match) {
           const accesToken = jwt.sign(
             { id: currentUser.id },
             process.env.JWT_ACCESS_TOKEN,
@@ -66,6 +71,29 @@ class LoginController {
         maxAge: 24 * 60 * 60 * 1000,
       })
       return res.sendStatus(204)
+    } catch (error) {
+      res.status(500).json({ msg: 'Server Error' })
+      console.log(error)
+    }
+  }
+  async register(req, res) {
+    try {
+      const { email, name, password, gender } = req.body
+      if (!email || !password || !name)
+        return res
+          .status(400)
+          .json({ msg: 'Email, name and password are required!' })
+      let duplicate = await UserService.getUserByEmail(email)
+      if (duplicate) {
+        res.sendStatus(409)
+      } else {
+        //encrypt password
+        const hashedPassword = await bcrypt.hash(password, 10)
+        //store new user
+        const userData = { email, name, password: hashedPassword, gender }
+        await UserService.insertUser(userData)
+        res.sendStatus(201)
+      }
     } catch (error) {
       res.status(500).json({ msg: 'Server Error' })
       console.log(error)

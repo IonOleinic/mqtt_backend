@@ -1,41 +1,20 @@
 const Device = require('./device')
 class SmartIR extends Device {
-  constructor({
-    id,
-    name,
-    img,
-    user_id,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    favorite,
-    attributes = {},
-  }) {
-    super(
-      id,
-      name,
-      img,
-      user_id,
-      manufacter,
-      mqtt_name,
-      mqtt_group,
-      'smartIR',
-      false,
-      false,
-      favorite
-    )
+  constructor(deviceData) {
+    super(deviceData)
+    const { PRESET } = deviceData.attributes
     this.repeats = '1'
-    this.IR_protocol = attributes.PRESET.protocol
+    this.IR_protocol = PRESET?.protocol
     this.buttons = {}
-    let btns = attributes.PRESET.buttons
+    let btns = PRESET?.buttons
     if (this.manufacter == 'tasmota') {
-      this.cmnd_topic = `cmnd/${mqtt_name}/IRSend`
-      this.receive_topic = `tele/${mqtt_name}/RESULT`
-      this.bits = attributes.PRESET.tasmotaBits
+      this.cmnd_topic = `cmnd/${this.mqtt_name}/IRSend`
+      this.receive_topic = `tele/${this.mqtt_name}/RESULT`
+      this.bits = PRESET?.tasmotaBits
     } else if (this.manufacter == 'openBeken') {
-      this.receive_topic = `${mqtt_name}/ir/get`
-      this.cmnd_topic = `cmnd/${mqtt_name}/IRSend`
-      this.bits = attributes.PRESET.openBekenBits
+      this.receive_topic = `${this.mqtt_name}/ir/get`
+      this.cmnd_topic = `cmnd/${this.mqtt_name}/IRSend`
+      this.bits = PRESET?.openBekenBits
     }
     if (btns) {
       for (let i = 0; i < btns.length; i++) {
@@ -44,10 +23,6 @@ class SmartIR extends Device {
           fullName: btns[i].fullName,
         }
       }
-    }
-    if (img === '') {
-      this.img =
-        'https://www.expert4house.com/1281-large_default/tuya-smart-ir-rf-control-wifi-universal.jpg'
     }
   }
   initDevice() {
@@ -68,11 +43,7 @@ class SmartIR extends Device {
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
-    if (io) {
-      io.emit('update_device', {
-        device: this,
-      })
-    }
+    this.sendWithSocket(io)
   }
 }
 module.exports = SmartIR

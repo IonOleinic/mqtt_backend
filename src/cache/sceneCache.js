@@ -21,8 +21,12 @@ class SceneCache {
       console.log(error)
     }
   }
-  async getScenes() {
-    return await this.deleteExpiredSchedules()
+  async getScenes(userId) {
+    let afterDelete = await this.deleteExpiredSchedules()
+    if (userId) {
+      return afterDelete.filter((scene) => scene.user_id == userId)
+    }
+    return afterDelete
   }
   async getScene(sceneId) {
     sceneId = sceneId.toString()

@@ -1,52 +1,63 @@
 const { UserService } = require('../services/userService')
-
+const { mapUserToViewModel } = require('../mappers/userMapper')
 class UserController {
   async getUsers(req, res) {
-    let users = await UserService.getAllUsers()
-    res.json(users)
+    try {
+      let users = await UserService.getAllUsers()
+      res.json(
+        users.map((user) => {
+          mapUserToViewModel(user)
+        })
+      )
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
+    }
   }
   async getUser(req, res) {
     try {
       let currentUser = await UserService.getUserByID(req.params['id'])
       if (currentUser) {
-        res.json(currentUser)
+        res.json(mapUserToViewModel(currentUser))
       } else {
-        res.json({ succes: false, msg: "User doesn't exist" })
+        res.status(404).json({ msg: "User doesn't exist" })
       }
     } catch (error) {
-      res.json({ succes: false, msg: 'Server Error' })
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
     }
   }
   async getUserByEmail(req, res) {
     try {
       let currentUser = await UserService.getUserByEmail(req.query['email'])
       if (currentUser) {
-        res.json(currentUser)
+        res.json(mapUserToViewModel(currentUser))
       } else {
-        res.json({ succes: false, msg: "User doesn't exist" })
+        res.status(404).json({ msg: "User doesn't exist" })
       }
     } catch (error) {
-      res.json({ succes: false, msg: 'Server Error' })
+      console.log(error)
+      res.status(500).json({ msg: 'Error occured!' })
     }
   }
   async createUser(req, res) {
     let userData = req.body
     try {
       await UserService.insertUser(userData)
-      res.json({ succes: true })
+      res.sendStatus(201)
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Error occured!' })
     }
   }
   async updateUser(req, res) {
+    let userData = req.body
     try {
-      let updatedUser = await UserService.updateUser(req.params['id'], req.body)
-      res.json(updatedUser)
+      let updatedUser = await UserService.updateUser(req.params['id'], userData)
+      res.json(mapUserToViewModel(updatedUser))
     } catch (error) {
       console.log(error)
-      let currentUser = await UserService.getUserByID(req.params['id'])
-      res.json(currentUser)
+      res.json(userData)
     }
   }
   async deleteUser(req, res) {
@@ -55,9 +66,13 @@ class UserController {
       res.json(users)
     } catch (error) {
       console.log(error)
-      let users = await UserService.getAllUsers()
-      res.json(users)
     }
+    let users = await UserService.getAllUsers()
+    res.json(
+      users.map((user) => {
+        mapUserToViewModel(user)
+      })
+    )
   }
 }
 

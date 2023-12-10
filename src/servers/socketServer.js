@@ -1,7 +1,8 @@
 const { Server } = require('socket.io')
-const { DeviceService } = require('./services/deviceService')
-
-const io = new Server() // Create the instance without the server argument
+const { DeviceService } = require('../services/deviceService')
+const socketCorsOptions = require('../../config/socketCorsOptions')
+const httpServer = require('./httpServer')
+const io = new Server(httpServer, socketCorsOptions)
 
 io.on('connection', (socket) => {
   console.log(
@@ -15,6 +16,9 @@ io.on('connection', (socket) => {
     console.log('A client has been disconnected.')
     console.log(`Connected clients: ${io.engine.clientsCount}`)
   })
+})
+io.on('error', (error) => {
+  console.log(error)
 })
 
 module.exports = io

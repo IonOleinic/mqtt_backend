@@ -5,6 +5,7 @@ class WeatherScene extends Scene {
   constructor({
     id,
     name,
+    user_id,
     active,
     favorite,
     date,
@@ -17,6 +18,7 @@ class WeatherScene extends Scene {
     super(
       id,
       name,
+      user_id,
       'weather',
       active,
       favorite,

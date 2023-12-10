@@ -14,26 +14,23 @@ const checkIfInScene = (device, scenes, topic, payload) => {
 }
 const getAllGroups = (devices) => {
   let mqttGroups = []
-  for (let i = 0; i < devices.length; i++) {
-    let mqtt_group = devices[i].mqtt_group
+  devices.forEach((device) => {
+    let mqtt_group = device.mqtt_group
     if (typeof mqtt_group == 'string') {
       mqtt_group = mqtt_group.split(',')
     }
-    for (let j = 0; j < mqtt_group.length; j++) {
-      if (!mqttGroups.includes(devices[i].mqtt_group[j])) {
-        mqttGroups.push(devices[i].mqtt_group[j])
+    mqtt_group.forEach((group) => {
+      if (!mqttGroups.includes(group)) {
+        mqttGroups.push(group)
       }
-    }
-  }
+    })
+  })
   return mqttGroups
 }
 const filterDeviceList = (filter, devices) => {
-  let filteredDevices = []
-  for (let i = 0; i < devices.length; i++) {
-    if (devices[i].mqtt_group.includes(filter)) {
-      filteredDevices.push(devices[i])
-    }
-  }
+  let filteredDevices = devices.filter((device) =>
+    device.mqtt_group.includes(filter)
+  )
   return filteredDevices
 }
 const subscribeToTopic = (mqttClient, topicToSubcribe) => {

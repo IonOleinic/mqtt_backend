@@ -2,8 +2,8 @@ const {
   filterDeviceList,
   getDeviceByMqttName,
   getAllGroups,
-} = require('../helpers')
-const { DeviceTypes } = require('../deviceTypes')
+} = require('../helpers/helpers')
+const { DeviceTypes } = require('../helpers/deviceTypes')
 const DeviceCache = require('../cache/deviceCache')
 const SceneCache = require('../cache/sceneCache')
 
@@ -21,8 +21,8 @@ class DeviceService {
     let devicesToReturn = await DeviceCache.initDeviceCache()
     return devicesToReturn
   }
-  static async getAllDevices(filter) {
-    let devicesToReturn = await DeviceCache.getDevices()
+  static async getAllDevices(userId, filter) {
+    let devicesToReturn = await DeviceCache.getDevices(userId)
     if (filter) {
       devicesToReturn = filterDeviceList(filter, devicesToReturn)
     }
@@ -34,6 +34,9 @@ class DeviceService {
   static async insertDevice(deviceData) {
     return await DeviceCache.insertDevice(deviceData)
   }
+  static async updateDeviceOnlyDB(deviceId, deviceData) {
+    return await DeviceCache.updateDeviceOnlyDB(deviceId, deviceData)
+  }
   static async updateDevice(deviceId, deviceData) {
     return await DeviceCache.updateDevice(deviceId, deviceData)
   }
@@ -41,8 +44,8 @@ class DeviceService {
     await SceneCache.deleteScenesCascade(deviceId)
     return await DeviceCache.deleteDevice(deviceId)
   }
-  static async getMqttGroups() {
-    let mqttGroups = getAllGroups(await DeviceService.getAllDevices())
+  static async getMqttGroups(userId) {
+    let mqttGroups = getAllGroups(await DeviceService.getAllDevices(userId))
     return mqttGroups
   }
   static getDeviceByMqttName(

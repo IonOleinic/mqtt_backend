@@ -1,42 +1,17 @@
 const Device = require('./device')
 class SmartTempSensor extends Device {
-  constructor({
-    id,
-    name,
-    img,
-    user_id,
-    manufacter,
-    mqtt_name,
-    mqtt_group,
-    favorite,
-    attributes = {},
-  }) {
-    super(
-      id,
-      name,
-      img,
-      user_id,
-      manufacter,
-      mqtt_name,
-      mqtt_group,
-      'smartTempSensor',
-      false,
-      false,
-      favorite
-    )
-    this.temperature = attributes.temperature ? attributes.temperature : 0
-    this.humidity = attributes.humidity ? attributes.humidity : 0
-    this.battery_level = attributes.battery_level ? attributes.battery_level : 0
-    if (img === '') {
-      this.img =
-        'https://www.expert4house.com/1176-large_default/tuya-zigbee-temperature-and-humidity-sensor.jpg'
-    }
+  constructor(deviceData) {
+    super(deviceData)
+    const { temperature, humidity, battery_level } = deviceData.attributes
+    this.temperature = temperature ? temperature : 0
+    this.humidity = humidity ? humidity : 0
+    this.battery_level = battery_level ? battery_level : 0
     if (this.manufacter == 'tasmota') {
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.receive_temp_topic = `${mqtt_name}/1/get`
-      this.receive_hum_topic = `${mqtt_name}/2/get`
-      this.receive_batt_topic = `${mqtt_name}/3/get`
+      this.receive_temp_topic = `${this.mqtt_name}/1/get`
+      this.receive_hum_topic = `${this.mqtt_name}/2/get`
+      this.receive_batt_topic = `${this.mqtt_name}/3/get`
     }
   }
   initDevice() {
@@ -51,9 +26,9 @@ class SmartTempSensor extends Device {
     if (this.manufacter == 'tasmota') {
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
+      // this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
     }
   }
   processIncomingMessage(topic, payload, io) {
@@ -66,11 +41,7 @@ class SmartTempSensor extends Device {
     } else if (topic === this.receive_batt_topic) {
       this.battery_level = Number(value)
     }
-    if (io) {
-      io.emit('update_device', {
-        device: this,
-      })
-    }
+    this.sendWithSocket(io)
   }
 }
 module.exports = SmartTempSensor

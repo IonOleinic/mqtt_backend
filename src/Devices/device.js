@@ -1,6 +1,6 @@
-const { mqttClient } = require('../mqttClient')
+const { mqttClient } = require('../mqtt/mqttClient')
 class Device {
-  constructor(
+  constructor({
     id,
     name,
     img,
@@ -9,24 +9,36 @@ class Device {
     mqtt_name,
     mqtt_group,
     device_type,
-    battery,
-    read_only,
-    favorite
-  ) {
+    favorite,
+    date,
+  }) {
     this.user_id = user_id
     this.favorite = favorite
     this.id = id
     this.name = name
     this.manufacter = manufacter
     this.img = img
-    this.battery = battery
-    this.read_only = read_only
+    this.battery = [
+      'smartTempSensor',
+      'smartDoorSensor',
+      'smartSirenAlarm',
+      'smartMotionSensor',
+    ].includes(device_type)
+      ? true
+      : false
+    this.read_only = [
+      'smartTempSensor',
+      'smartDoorSensor',
+      'smartMotionSensor',
+    ].includes(device_type)
+      ? true
+      : false
     this.mqtt_name = mqtt_name
     this.mqtt_group = mqtt_group ? mqtt_group.split(',') : []
     this.device_type = device_type
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
-    this.date = new Date()
+    this.date = new Date(date)
     this.available = false
   }
   subscribeForDeviceInfo() {
@@ -98,6 +110,13 @@ class Device {
         console.log(error)
       }
     })
+  }
+  sendWithSocket(io) {
+    if (io) {
+      io.emit('update_device', {
+        device: this,
+      })
+    }
   }
 }
 
