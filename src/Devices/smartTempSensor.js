@@ -26,9 +26,10 @@ class SmartTempSensor extends Device {
     if (this.manufacter == 'tasmota') {
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      // this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
+      if (!this.temperature) this.sendMqttReq(`${this.receive_temp_topic}`, '')
+      if (!this.humidity) this.sendMqttReq(`${this.receive_hum_topic}`, '')
+      if (!this.battery_level)
+        this.sendMqttReq(`${this.receive_batt_topic}`, '')
     }
   }
   processIncomingMessage(topic, payload, io) {
@@ -39,7 +40,16 @@ class SmartTempSensor extends Device {
     } else if (topic === this.receive_hum_topic) {
       this.humidity = Number(value)
     } else if (topic === this.receive_batt_topic) {
-      this.battery_level = Number(value)
+      let level = Number(value)
+      if (level == 2) {
+        this.battery_level = 3
+      } else if (level == 1) {
+        this.battery_level = 2
+      } else if (level == 0) {
+        this.battery_level = 1
+      } else {
+        this.battery_level = 0
+      }
     }
     this.sendWithSocket(io)
   }

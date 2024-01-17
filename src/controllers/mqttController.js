@@ -4,10 +4,10 @@ const { checkIfInScene } = require('../helpers/helpers')
 const io = require('../servers/socketServer')
 let connected = false
 class MqttController {
-  onConnect = () => {
+  onConnect = async () => {
     connected = true
     console.log('MQTT Client connected.')
-    DeviceService.getAllDevicesDB()
+    await DeviceService.loadDeviceCache()
   }
   onClose = () => {
     if (connected) {
@@ -24,28 +24,25 @@ class MqttController {
     payload = payload.toString()
     let currentDevice = undefined
     if (buffer[0] === 'stat' || buffer[0] === 'tele') {
-      currentDevice = DeviceService.getDeviceByMqttName(
-        buffer[1],
-        DeviceService.getAllTempDevices()
-      )
+      currentDevice = await DeviceService.getTempDeviceByMqttName(buffer[1])
     } else {
-      currentDevice = DeviceService.getDeviceByMqttName(
-        buffer[0],
-        DeviceService.getAllTempDevices()
-      )
+      currentDevice = await DeviceService.getTempDeviceByMqttName(buffer[0])
     }
     if (!currentDevice) {
       if (buffer[0] === 'stat' || buffer[0] === 'tele') {
-        currentDevice = DeviceService.getDeviceByMqttName(buffer[1])
+        currentDevice = await DeviceService.getDeviceByMqttName(buffer[1])
       } else {
-        currentDevice = DeviceService.getDeviceByMqttName(buffer[0])
+        currentDevice = await DeviceService.getDeviceByMqttName(buffer[0])
       }
     }
     try {
       if (currentDevice) {
         currentDevice.processIncomingMessage(topic, payload, io)
-        if (currentDevice.battery) {
-          DeviceService.updateDeviceOnlyDB(currentDevice.id, currentDevice)
+        if (!currentDevice.device_type.includes('temp')) {
+          await DeviceService.updateDeviceOnlyDB(
+            currentDevice.id,
+            currentDevice
+          )
         }
         checkIfInScene(
           currentDevice,

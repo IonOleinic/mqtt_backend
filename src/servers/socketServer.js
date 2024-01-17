@@ -9,8 +9,6 @@ io.on('connection', (socket) => {
     `A new connection from ${socket.handshake.headers.origin} with id:${socket.id}`
   )
   console.log(`Connected clients: ${io.engine.clientsCount}`)
-  // Refresh devices from the database
-  DeviceService.getAllDevicesDB()
 
   socket.on('disconnect', () => {
     console.log('A client has been disconnected.')

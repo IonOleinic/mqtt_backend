@@ -50,29 +50,23 @@ class SmartLed extends Device {
       this.subscribeToTopic(this.receive_color_topic)
     }
     this.getDeviceInfo()
-    this.getInitialState()
-    this.sendChangePalette(this.palette)
+    this.setLastState()
   }
-  getInitialState() {
-    if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Dimmer`, '')
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, '')
-      if (this.led_type.includes('rgb')) {
-        this.sendMqttReq(`cmnd/${this.mqtt_name}/Color`, '')
-        this.sendMqttReq(`cmnd/${this.mqtt_name}/Palette`, '')
-        this.sendMqttReq(`cmnd/${this.mqtt_name}/Scheme`, '')
-      }
-    } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Dimmer`, '')
-      if (this.led_type.includes('rgb')) {
-        this.sendMqttReq(`cmnd/${this.mqtt_name}/Color`, '')
+
+  setLastState() {
+    this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, this.status)
+    if (this.led_type.includes('rgb')) {
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.speed)
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/Color`, this.color)
+      if (this.manufacter == 'tasmota') {
+        this.sendChangePalette(this.palette)
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/Scheme`, this.scheme)
       }
     }
+    this.sendMqttReq(`cmnd/${this.mqtt_name}/Dimmer`, this.dimmer)
   }
   stopPallete() {
-    this.sendChangeScheme(0)
+    // this.sendChangeScheme(0)
   }
   sendChangeColor(color) {
     if (this.speed != 1) {
@@ -83,9 +77,8 @@ class SmartLed extends Device {
     } else if (this.manufacter == 'openBeken') {
       this.sendMqttReq(`cmnd/${this.mqtt_name}/led_basecolor_rgbcw`, color)
     }
-    let temp = this.speed.toString()
     setTimeout(() => {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, temp)
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.speed)
       this.sendMqttReq(`cmnd/${this.mqtt_name}/Scheme`, '')
     }, 10)
   }
@@ -95,7 +88,7 @@ class SmartLed extends Device {
     }
     this.sendMqttReq(`cmnd/${this.mqtt_name}/Dimmer`, dimmer)
     setTimeout(() => {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.speed.toString())
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.speed)
     }, 10)
   }
   sendChangeSpeed(speed) {
@@ -110,7 +103,7 @@ class SmartLed extends Device {
     }
     this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, power)
     setTimeout(() => {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.speed.toString())
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.speed)
     }, 10)
   }
   sendChangePalette(palette) {
@@ -127,27 +120,24 @@ class SmartLed extends Device {
       if (result.POWER) {
         this.status = result.POWER
       }
-      if (result.Dimmer != undefined) {
+      if (result.Dimmer) {
         this.dimmer = result.Dimmer
       }
-      if (result.Speed != undefined) {
+      if (result.Speed) {
         this.speed = Number(result.Speed)
       }
       if (this.manufacter == 'tasmota') {
-        if (result.Color != undefined) {
+        if (result.Color) {
           this.color = result.Color
           this.stopPallete()
         }
-        if (result.Palette != undefined) {
-          let temp = result.Palette.replaceAll('[', '')
+        if (result.Palette) {
+          this.palette = result.Palette.replaceAll('[', '')
             .replaceAll(']', '')
             .split(',')
-          for (let i = 0; i < 5; i++) {
-            if (temp[i]) {
-              this.palette[i] = temp[i]
-            } else {
-              this.palette[i] = ''
-            }
+            .map((item) => item)
+          while (this.palette.length < 5) {
+            this.palette.push('')
           }
         }
         if (result.Scheme != undefined) {

@@ -42,25 +42,33 @@ class SmartSirenAlarm extends Device {
     this.subscribeToTopic(this.receive_batt_topic)
     this.getDeviceInfo()
     this.getInitialState()
+    this.setLastState()
   }
-  updateOptions(newSound, newVolume, newDuration) {
-    this.sendMqttReq(`${this.mqtt_name}/4/set`, newSound)
-    this.sendMqttReq(`${this.mqtt_name}/5/set`, newVolume)
-    this.sendMqttReq(`${this.mqtt_name}/6/set`, newDuration)
-  }
+
   getInitialState() {
     if (this.manufacter == 'tasmota') {
       this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/2/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/3/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/4/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/5/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/6/get`, '')
-      // this.sendMqttReq(`${this.mqtt_name}/7/get`, '')
+      this.sendMqttReq(`${this.receive_status_topic}`, '')
+      if (!this.temperature) this.sendMqttReq(`${this.receive_temp_topic}`, '')
+      if (!this.humidity) this.sendMqttReq(`${this.receive_hum_topic}`, '')
+      if (!this.battery_level)
+        this.sendMqttReq(`${this.receive_batt_topic}`, '')
     }
+  }
+  updateOptions(newSound, newVolume, newDuration) {
+    if (this.manufacter == 'tasmota') {
+      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
+      //TODO
+    } else if (this.manufacter == 'openBeken') {
+      this.sendMqttReq(`${this.mqtt_name}/4/set`, newSound, true)
+      this.sendMqttReq(`${this.mqtt_name}/5/set`, newVolume, true)
+      this.sendMqttReq(`${this.mqtt_name}/6/set`, newDuration, true)
+    }
+  }
+  setLastState() {
+    this.updateOptions(this.sound, this.volume, this.sound_duration)
   }
   changePowerState(socket_nr = 1, status) {
     if (status == 'TOGGLE') {

@@ -3,7 +3,7 @@ const { DeviceService } = require('../services/deviceService')
 class SmartDoorSensorController {
   async toggleDoor(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.sendToggleReq()

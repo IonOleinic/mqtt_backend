@@ -23,11 +23,11 @@ class SmartMotionSensor extends Device {
   }
   getInitialState() {
     if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
+      if (!this.status) this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
       //Battery topic TODO
-    } else {
-      this.sendMqttReq(`${this.mqtt_name}/1/get`, '')
-      this.sendMqttReq(`${this.mqtt_name}/4/get`, '')
+    } else if (this.manufacter == 'openBeken') {
+      if (!this.status) this.sendMqttReq(this.receive_status_topic, '')
+      if (!this.battery_level) this.sendMqttReq(this.receive_batt_topic, '')
     }
   }
 

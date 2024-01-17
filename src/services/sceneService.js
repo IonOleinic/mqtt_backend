@@ -5,8 +5,8 @@ class SceneService {
     let scenes = await SceneCache.getScenes(userId)
     return scenes
   }
-  static async getSceneByID(sceneId) {
-    let currentScene = await SceneCache.getScenes(sceneId)
+  static async getSceneById(sceneId) {
+    let currentScene = await SceneCache.getScene(sceneId)
     return currentScene
   }
   static async insertScene(sceneData) {

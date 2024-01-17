@@ -16,7 +16,7 @@ class UserController {
   }
   async getUser(req, res) {
     try {
-      let currentUser = await UserService.getUserByID(req.params['id'])
+      let currentUser = await UserService.getUserById(req.params['id'])
       if (currentUser) {
         res.json(mapUserToViewModel(currentUser))
       } else {

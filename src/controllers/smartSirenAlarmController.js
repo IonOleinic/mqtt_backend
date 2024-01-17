@@ -3,7 +3,7 @@ const { DeviceService } = require('../services/deviceService')
 class SmartSirenAlarmController {
   async changePowerState(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.changePowerState(1, req.query['status'])
@@ -15,7 +15,7 @@ class SmartSirenAlarmController {
   }
   async updateOptions(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.updateOptions(

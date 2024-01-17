@@ -1,8 +1,4 @@
-const {
-  filterDeviceList,
-  getDeviceByMqttName,
-  getAllGroups,
-} = require('../helpers/helpers')
+const { filterDeviceList, getAllGroups } = require('../helpers/helpers')
 const { DeviceTypes } = require('../helpers/deviceTypes')
 const DeviceCache = require('../cache/deviceCache')
 const SceneCache = require('../cache/sceneCache')
@@ -17,19 +13,26 @@ class DeviceService {
   static deleteTempDevice(tempDeviceId) {
     return DeviceCache.deleteTempDevice(tempDeviceId)
   }
-  static async getAllDevicesDB() {
-    let devicesToReturn = await DeviceCache.initDeviceCache()
+  static getTempDeviceByMqttName(mqttName) {
+    return DeviceCache.getTempDeviceByMqttName(mqttName)
+  }
+  static async loadDeviceCache(userId) {
+    let devicesToReturn = await DeviceCache.loadDeviceCache(userId)
     return devicesToReturn
   }
-  static async getAllDevices(userId, filter) {
-    let devicesToReturn = await DeviceCache.getDevices(userId)
+  static async getDevices(userId, filter, includeDeleted) {
+    let devices = await DeviceCache.getDevices(userId, includeDeleted)
     if (filter) {
-      devicesToReturn = filterDeviceList(filter, devicesToReturn)
+      devices = filterDeviceList(filter, devices)
     }
-    return devicesToReturn
+    return devices
   }
-  static async getDeviceByID(deviceId) {
-    return await DeviceCache.getDevice(deviceId)
+  static async getDeletedDevices(userId) {
+    let devices = await DeviceCache.getDeletedDevices(userId)
+    return devices
+  }
+  static async getDeviceById(deviceId, includeDeleted) {
+    return await DeviceCache.getDeviceById(deviceId, includeDeleted)
   }
   static async insertDevice(deviceData) {
     return await DeviceCache.insertDevice(deviceData)
@@ -44,15 +47,18 @@ class DeviceService {
     await SceneCache.deleteScenesCascade(deviceId)
     return await DeviceCache.deleteDevice(deviceId)
   }
+  static async destroyDevice(deviceId) {
+    return await DeviceCache.destroyDevice(deviceId)
+  }
+  static async recoverDevice(deviceId, deviceData) {
+    return await DeviceCache.recoverDevice(deviceId, deviceData)
+  }
   static async getMqttGroups(userId) {
-    let mqttGroups = getAllGroups(await DeviceService.getAllDevices(userId))
+    let mqttGroups = getAllGroups(await DeviceService.getDevices(userId))
     return mqttGroups
   }
-  static getDeviceByMqttName(
-    deviceId,
-    listOfDevices = DeviceCache.getDevices()
-  ) {
-    return getDeviceByMqttName(listOfDevices, deviceId)
+  static async getDeviceByMqttName(mqttName, includeDeleted) {
+    return await DeviceCache.getDeviceByMqttName(mqttName, includeDeleted)
   }
   static getDeviceTypes() {
     return DeviceTypes

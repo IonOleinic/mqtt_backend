@@ -4,7 +4,7 @@ class UserService {
   static async getAllUsers() {
     return await UserCache.getUsers()
   }
-  static async getUserByID(userId) {
+  static async getUserById(userId) {
     return await UserCache.getUser(userId)
   }
   static async getUserByEmail(userEmail) {

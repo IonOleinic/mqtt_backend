@@ -10,39 +10,106 @@ class DeviceCache {
   constructor() {
     this.devices = new Map()
     this.tempDevices = new Map()
-    this.initDeviceCache()
+    this.loadDeviceCache()
   }
-  async initDeviceCache() {
+  async loadDeviceCache(userId) {
     try {
-      let devicesFromDB = await Device.findAll()
+      let devicesFromDB = []
+      this.tempDevices = new Map()
+      if (userId)
+        devicesFromDB = await Device.findAll({ where: { user_id: userId } })
+      else {
+        this.devices = new Map()
+        devicesFromDB = await Device.findAll()
+      }
       devicesFromDB.forEach((instance) => {
-        let deviceDB = instance.dataValues
-        this.devices.set(deviceDB.id.toString(), this.buildDeviceObj(deviceDB))
+        let deviceData = instance.dataValues
+        this.devices.set(
+          deviceData.id.toString(),
+          this.buildDeviceObj(deviceData)
+        )
       })
     } catch (error) {
       console.log(error)
     }
-    return this.getDevices()
+    return await this.getDevices()
   }
-  getDevices(userId) {
-    const allDevices = Array.from(this.devices.values())
-    if (userId) {
-      return allDevices.filter((device) => device.user_id == userId)
-    }
+  // async loadDeviceFromCache(deviceId) {
+  //   try {
+  //     if (deviceId){
+  //       const deviceDB = await Device.findByPk(deviceId)
+  //       if (deviceDB) {
+  //         let device = this.buildDeviceObj(deviceDB.dataValues)
+  //         this.devices.set(deviceId, device)
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  //   return await this.getDevices()
+  // }
+
+  async getDevices(userId, includeDeleted) {
+    let allDevices = Array.from(this.devices.values())
+    if (userId)
+      allDevices = allDevices.filter((device) => device.user_id == userId)
+
+    if (!includeDeleted)
+      allDevices = allDevices.filter((device) => device.is_deleted == false)
+
     return allDevices
   }
-  async getDevice(deviceId) {
+  async getDeletedDevices(userId) {
+    let devicesFromDB = []
+    if (userId)
+      devicesFromDB = await Device.findAll({
+        where: { user_id: userId, is_deleted: true },
+      })
+    else
+      devicesFromDB = await Device.findAll({
+        where: { is_deleted: true },
+      })
+    return devicesFromDB.map((device) => device.dataValues)
+  }
+  async getDeviceById(deviceId, includeDeleted) {
     try {
+      let device = undefined
       if (this.devices.has(deviceId)) {
-        return this.devices.get(deviceId)
+        device = this.devices.get(deviceId)
       }
-      // If the device is not in the cache, load it from the database
-      const deviceDB = await Device.findByPk(deviceId)
-      let device = this.buildDeviceObj(deviceDB.dataValues)
-      if (deviceDB) {
-        this.devices.set(deviceId, device)
+      if (!device) {
+        // If the device is not in the cache, load it from the database
+        const deviceDB = await Device.findByPk(deviceId)
+        if (deviceDB) {
+          device = this.buildDeviceObj(deviceDB.dataValues)
+          this.devices.set(deviceId, device)
+        }
       }
-      return device
+      if (!includeDeleted) {
+        if (device.is_deleted == false) return device
+      } else return device
+    } catch (error) {
+      throw error
+    }
+  }
+  async getDeviceByMqttName(mqttName, includeDeleted) {
+    try {
+      let device = undefined
+      let allDevices = Array.from(this.devices.values())
+      device = allDevices.filter((device) => device.mqtt_name == mqttName)[0]
+      if (!device) {
+        // If the device is not in the cache, load it from the database
+        const deviceDB = await Device.findAll({
+          where: { mqtt_name: mqttName },
+        })[0]
+        if (deviceDB) {
+          device = this.buildDeviceObj(deviceDB.dataValues)
+          this.devices.set(deviceDB.id.toString(), device) //load it in cache
+        }
+      }
+      if (!includeDeleted) {
+        if (device?.is_deleted == false) return device
+      } else return device
     } catch (error) {
       throw error
     }
@@ -50,8 +117,6 @@ class DeviceCache {
   async insertDevice(deviceData) {
     let deviceDB = undefined
     deviceData.name = deviceData.name
-      ? deviceData.name
-      : 'Device ' + Math.random().toString(16).slice(2, 7)
     try {
       deviceDB = await Device.create(deviceData)
       let device = this.buildDeviceObj(deviceDB.dataValues)
@@ -80,6 +145,26 @@ class DeviceCache {
       throw error
     }
   }
+  async recoverDevice(deviceId, deviceData) {
+    try {
+      const deviceDB = await Device.findByPk(deviceId)
+      if (deviceDB) {
+        if (deviceData) {
+          deviceData.is_deleted = false
+          await deviceDB.update(deviceData)
+        } else {
+          deviceDB.is_deleted = false
+          await await deviceDB.update(deviceDB.dataValues)
+        }
+        let device = this.devices.get(deviceId.toString())
+        device.is_deleted = true
+        this.devices.set(deviceId, device)
+      }
+      return true
+    } catch (error) {
+      throw error
+    }
+  }
   async updateDeviceOnlyDB(deviceId, deviceData) {
     deviceData.mqtt_group = deviceData.mqtt_group.toString()
     this.constructAttributes(deviceData)
@@ -94,6 +179,25 @@ class DeviceCache {
     }
   }
   async deleteDevice(deviceId) {
+    try {
+      const deviceDB = await Device.findByPk(deviceId)
+      if (deviceDB) {
+        if (deviceDB.device_type == 'smartIR') {
+          await this.destroyDevice(deviceId)
+        } else {
+          deviceDB.is_deleted = true
+          await deviceDB.update(deviceDB.dataValues)
+          let device = this.devices.get(deviceId.toString())
+          device.is_deleted = true
+          this.devices.set(deviceId, device)
+        }
+      }
+      return true
+    } catch (error) {
+      throw error
+    }
+  }
+  async destroyDevice(deviceId) {
     try {
       const deviceDB = await Device.findByPk(deviceId)
       if (deviceDB) {
@@ -115,6 +219,13 @@ class DeviceCache {
   deleteTempDevice(tempDeviceId) {
     this.tempDevices.delete(tempDeviceId)
     return Array.from(this.tempDevices.values())
+  }
+  getTempDeviceByMqttName(mqttName) {
+    let allTempDevices = Array.from(this.tempDevices.values())
+    let device = allTempDevices.filter(
+      (device) => device.mqtt_name == mqttName
+    )[0]
+    return device
   }
   buildDeviceObj(deviceData) {
     let device = {}
@@ -156,7 +267,7 @@ class DeviceCache {
     oldDevice.mqtt_name = newDevice.mqtt_name
     oldDevice.mqtt_group = newDevice.mqtt_group
     oldDevice.favorite = newDevice.favorite
-    oldDevice.img = newDevice.img
+    oldDevice.is_deleted = newDevice.is_deleted
     oldDevice.manufacter = newDevice.manufacter
     oldDevice.available = newDevice.available
   }
@@ -166,6 +277,25 @@ class DeviceCache {
         temperature: deviceData.temperature,
         humidity: deviceData.humidity,
         battery_level: deviceData.battery_level,
+      }
+    }
+    if (deviceData.device_type === 'smartStrip') {
+      deviceData.attributes = {
+        sensor_data: deviceData.sensor_data,
+        switch_type: deviceData.switch_type,
+        nr_of_sockets: deviceData.nr_of_sockets,
+      }
+    }
+    if (deviceData.device_type === 'smartLed') {
+      deviceData.attributes = {
+        status: deviceData.status,
+        led_type: deviceData.led_type,
+        sub_type: deviceData.sub_type,
+        color: deviceData.color,
+        scheme: deviceData.scheme,
+        dimmer: deviceData.dimmer,
+        speed: deviceData.speed,
+        palette: deviceData.palette,
       }
     }
     if (deviceData.device_type === 'smartSirenAlarm') {
@@ -181,6 +311,13 @@ class DeviceCache {
     }
     if (deviceData.device_type === 'smartDoorSensor') {
       deviceData.attributes = {
+        status: deviceData.status,
+        battery_level: deviceData.battery_level,
+      }
+    }
+    if (deviceData.device_type === 'smartMotionSensor') {
+      deviceData.attributes = {
+        auto_off: deviceData.auto_off,
         status: deviceData.status,
         battery_level: deviceData.battery_level,
       }

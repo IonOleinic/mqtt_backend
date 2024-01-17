@@ -5,7 +5,7 @@ const { DeviceService } = require('../services/deviceService')
 
 class SmartIRController {
   async pressButton(req, res) {
-    let currentDevice = await DeviceService.getDeviceByID(
+    let currentDevice = await DeviceService.getDeviceById(
       req.query['device_id']
     )
     if (currentDevice) {

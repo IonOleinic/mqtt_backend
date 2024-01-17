@@ -3,7 +3,7 @@ const { DeviceService } = require('../services/deviceService')
 class SmartLedController {
   async changePower(req, res) {
     try {
-      let current_device = await DeviceService.getDeviceByID(
+      let current_device = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       current_device.sendChangePower(req.query['status'])
@@ -15,7 +15,7 @@ class SmartLedController {
   }
   async changeDimmer(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.sendChangeDimmer(req.query['dimmer'])
@@ -27,7 +27,7 @@ class SmartLedController {
   }
   async changeColor(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.sendChangeColor(req.query['color'])
@@ -39,7 +39,7 @@ class SmartLedController {
   }
   async changeSpeed(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.sendChangeSpeed(req.query['speed'])
@@ -51,7 +51,7 @@ class SmartLedController {
   }
   async changeScheme(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.sendChangeScheme(req.query['scheme'])
@@ -63,7 +63,7 @@ class SmartLedController {
   }
   async changePalette(req, res) {
     try {
-      let currentDevice = await DeviceService.getDeviceByID(
+      let currentDevice = await DeviceService.getDeviceById(
         req.query['device_id']
       )
       currentDevice.sendChangePalette(req.query['palette'])

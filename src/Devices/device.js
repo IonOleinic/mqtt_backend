@@ -3,21 +3,22 @@ class Device {
   constructor({
     id,
     name,
-    img,
     user_id,
     manufacter,
     mqtt_name,
     mqtt_group,
     device_type,
     favorite,
-    date,
+    is_deleted,
+    createdAt,
+    updatedAt,
   }) {
     this.user_id = user_id
     this.favorite = favorite
+    this.is_deleted = is_deleted
     this.id = id
     this.name = name
     this.manufacter = manufacter
-    this.img = img
     this.battery = [
       'smartTempSensor',
       'smartDoorSensor',
@@ -38,7 +39,8 @@ class Device {
     this.device_type = device_type
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
-    this.date = new Date(date)
+    this.createdAt = createdAt
+    this.updatedAt = updatedAt
     this.available = false
   }
   subscribeForDeviceInfo() {
@@ -51,9 +53,9 @@ class Device {
       this.info_topics.push(`${this.mqtt_name}/ip`)
       this.info_topics.push(`${this.mqtt_name}/mac`)
     }
-    for (let i = 0; i < this.info_topics.length; i++) {
-      this.subscribeToTopic(this.info_topics[i])
-    }
+    this.info_topics.forEach((topic) => {
+      this.subscribeToTopic(topic)
+    })
     this.subscribeToTopic(this.availability_topic)
   }
   subscribeToTopic(topicToSubcribe) {
@@ -81,7 +83,11 @@ class Device {
       if (value === '') {
         this.available = false
       } else {
-        this.available = true
+        if (this.available === false) {
+          this.available = true
+          // if (this.getInitialState) this.getInitialState()  //the issue is that the requests are sending in infinite loop
+          if (this.setLastState) this.setLastState()
+        }
       }
       if (this.info_topics.includes(topic)) {
         if (this.manufacter == 'tasmota') {
@@ -104,12 +110,17 @@ class Device {
       }
     }
   }
-  sendMqttReq(topic, payload) {
-    mqttClient.publish(topic, payload, { qos: 0, retain: false }, (error) => {
-      if (error) {
-        console.log(error)
+  sendMqttReq(topic, payload, retain = false) {
+    mqttClient.publish(
+      topic,
+      payload.toString(),
+      { qos: 0, retain: retain },
+      (error) => {
+        if (error) {
+          console.log(error)
+        }
       }
-    })
+    )
   }
   sendWithSocket(io) {
     if (io) {

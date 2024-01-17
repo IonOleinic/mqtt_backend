@@ -38,15 +38,10 @@ const subscribeToTopic = (mqttClient, topicToSubcribe) => {
     console.log(`Client subscried on ${topicToSubcribe}`)
   })
 }
-const getDeviceByMqttName = (devices, mqttName) => {
-  let filteredDevices = devices.filter((device) => device.mqtt_name == mqttName)
-  return filteredDevices[0]
-}
 
 module.exports = {
   checkIfInScene,
   getAllGroups,
   filterDeviceList,
   subscribeToTopic,
-  getDeviceByMqttName,
 }

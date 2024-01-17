@@ -7,7 +7,8 @@ class Scene {
     scene_type,
     active,
     favorite,
-    date,
+    createdAt,
+    updatedAt,
     exec_device_id,
     executable_topic,
     executable_payload,
@@ -20,7 +21,8 @@ class Scene {
     this.executable_topic = executable_topic
     this.executable_payload = executable_payload
     this.executable_text = executable_text
-    this.date = new Date(date)
+    this.createdAt = createdAt
+    this.updatedAt = updatedAt
     this.favorite = favorite
     this.active = active
     this.scene_type = scene_type

@@ -16,7 +16,7 @@ class SceneController {
   }
   async getScene(req, res) {
     try {
-      let currentScene = await SceneService.getSceneByID(req.params['id'])
+      let currentScene = await SceneService.getSceneById(req.params['id'])
       if (currentScene) {
         res.json(mapSceneToViewModel(currentScene))
       } else {
