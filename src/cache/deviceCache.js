@@ -34,20 +34,6 @@ class DeviceCache {
     }
     return await this.getDevices()
   }
-  // async loadDeviceFromCache(deviceId) {
-  //   try {
-  //     if (deviceId){
-  //       const deviceDB = await Device.findByPk(deviceId)
-  //       if (deviceDB) {
-  //         let device = this.buildDeviceObj(deviceDB.dataValues)
-  //         this.devices.set(deviceId, device)
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.log(error)
-  //   }
-  //   return await this.getDevices()
-  // }
 
   async getDevices(userId, includeDeleted) {
     let allDevices = Array.from(this.devices.values())
@@ -101,6 +87,28 @@ class DeviceCache {
         // If the device is not in the cache, load it from the database
         const deviceDB = await Device.findAll({
           where: { mqtt_name: mqttName },
+        })[0]
+        if (deviceDB) {
+          device = this.buildDeviceObj(deviceDB.dataValues)
+          this.devices.set(deviceDB.id.toString(), device) //load it in cache
+        }
+      }
+      if (!includeDeleted) {
+        if (device?.is_deleted == false) return device
+      } else return device
+    } catch (error) {
+      throw error
+    }
+  }
+  async getDeviceByName(deviceName, includeDeleted) {
+    try {
+      let device = undefined
+      let allDevices = Array.from(this.devices.values())
+      device = allDevices.filter((device) => device.name == deviceName)[0]
+      if (!device) {
+        // If the device is not in the cache, load it from the database
+        const deviceDB = await Device.findAll({
+          where: { name: deviceName },
         })[0]
         if (deviceDB) {
           device = this.buildDeviceObj(deviceDB.dataValues)
@@ -182,15 +190,15 @@ class DeviceCache {
     try {
       const deviceDB = await Device.findByPk(deviceId)
       if (deviceDB) {
-        if (deviceDB.device_type == 'smartIR') {
-          await this.destroyDevice(deviceId)
-        } else {
-          deviceDB.is_deleted = true
-          await deviceDB.update(deviceDB.dataValues)
-          let device = this.devices.get(deviceId.toString())
-          device.is_deleted = true
-          this.devices.set(deviceId, device)
-        }
+        // if (deviceDB.device_type == 'smartIR') {
+        //   await this.destroyDevice(deviceId)
+        // } else {
+        deviceDB.is_deleted = true
+        await deviceDB.update(deviceDB.dataValues)
+        let device = this.devices.get(deviceId.toString())
+        device.is_deleted = true
+        this.devices.set(deviceId, device)
+        // }
       }
       return true
     } catch (error) {

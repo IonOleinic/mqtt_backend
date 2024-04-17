@@ -8,17 +8,28 @@ class DeviceController {
     let deviceData = req.body
     deviceData.user_id = req.query['user_id']
     try {
-      const findedDevice = await DeviceService.getDeviceByMqttName(
+      const sameMqttNameDevice = await DeviceService.getDeviceByMqttName(
         deviceData.mqtt_name,
         true
       )
-      if (findedDevice && deviceData.device_type !== 'smartIR') {
-        if (findedDevice.is_deleted) {
-          await DeviceService.recoverDevice(findedDevice.id, deviceData)
-          await DeviceService.loadDeviceCache()
-          res.status(201).json({ msg: 'Device added with success' })
+      const sameNameDevice = await DeviceService.getDeviceByName(
+        deviceData.name,
+        true
+      )
+      if (sameMqttNameDevice || sameNameDevice) {
+        if (sameNameDevice) {
+          res.status(409).json({ msg: 'Device already exists with this name!' })
         } else {
-          res.status(409).json({ msg: 'Device already exists!' })
+          if (deviceData.device_type === 'smartIR') {
+            await DeviceService.insertDevice(deviceData)
+            res.status(201).json({ msg: 'Device added with success' })
+          } else {
+            if (sameMqttNameDevice.is_deleted)
+              res
+                .status(409)
+                .json({ msg: 'Device exists in your recycle bin!' })
+            else res.status(409).json({ msg: 'Device already exists!' })
+          }
         }
       } else {
         await DeviceService.insertDevice(deviceData)

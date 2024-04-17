@@ -34,6 +34,12 @@ class DeviceService {
   static async getDeviceById(deviceId, includeDeleted) {
     return await DeviceCache.getDeviceById(deviceId, includeDeleted)
   }
+  static async getDeviceByMqttName(mqttName, includeDeleted) {
+    return await DeviceCache.getDeviceByMqttName(mqttName, includeDeleted)
+  }
+  static async getDeviceByName(deviceName, includeDeleted) {
+    return await DeviceCache.getDeviceByName(deviceName, includeDeleted)
+  }
   static async insertDevice(deviceData) {
     return await DeviceCache.insertDevice(deviceData)
   }
@@ -56,9 +62,6 @@ class DeviceService {
   static async getMqttGroups(userId) {
     let mqttGroups = getAllGroups(await DeviceService.getDevices(userId))
     return mqttGroups
-  }
-  static async getDeviceByMqttName(mqttName, includeDeleted) {
-    return await DeviceCache.getDeviceByMqttName(mqttName, includeDeleted)
   }
   static getDeviceTypes() {
     return DeviceTypes
