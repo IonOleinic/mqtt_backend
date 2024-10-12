@@ -125,9 +125,15 @@ class Device {
   sendWithSocket(io) {
     if (io) {
       io.emit('update_device', {
-        device: this,
+        device: { ...this, sensor_update_interval_id: undefined },
       })
     }
+  }
+  clearIntervals() {
+    // clear intervals
+  }
+  destroy() {
+    // destroy device
   }
 }
 

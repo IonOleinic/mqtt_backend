@@ -9,10 +9,11 @@ class MqttController {
     console.log('MQTT Client connected.')
     await DeviceService.loadDeviceCache()
   }
-  onClose = () => {
+  onClose = async () => {
     if (connected) {
       console.log('MQTT Client disconnected.')
       connected = false
+      await DeviceService.loadDeviceCache()
     }
   }
   onError = (error) => {

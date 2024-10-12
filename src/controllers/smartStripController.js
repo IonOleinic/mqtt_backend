@@ -1,18 +1,6 @@
 const { DeviceService } = require('../services/deviceService')
 
 class SmartStripController {
-  async updateReq(req, res) {
-    try {
-      let currentDevice = await DeviceService.getDeviceById(
-        req.query['device_id']
-      )
-      currentDevice.updateReq()
-      res.json({ succes: true })
-    } catch (error) {
-      console.log(error)
-      res.json({ succes: false })
-    }
-  }
   async changePowerState(req, res) {
     try {
       let currentDevice = await DeviceService.getDeviceById(

@@ -4,8 +4,8 @@ class SmartDoorSensor extends Device {
   constructor(deviceData) {
     super(deviceData)
     const { status, battery_level } = deviceData.attributes
-    this.status = status ? status : 'Closed'
-    this.battery_level = battery_level ? battery_level : 0
+    this.status = status || 'Closed'
+    this.battery_level = battery_level || 0
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
       //Battery topic TODO

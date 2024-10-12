@@ -11,13 +11,13 @@ class SmartSirenAlarm extends Device {
       sound_duration,
       battery_level,
     } = deviceData.attributes
-    this.status = status ? status : 'OFF'
-    this.temperature = temperature ? temperature : 0
-    this.humidity = humidity ? humidity : 0
-    this.sound = sound ? sound : 5
-    this.volume = volume ? volume : 2
-    this.sound_duration = sound_duration ? sound_duration : 10
-    this.battery_level = battery_level ? battery_level : 0
+    this.status = status || 'OFF'
+    this.temperature = temperature || 0
+    this.humidity = humidity || 0
+    this.sound = sound || 5
+    this.volume = volume || 2
+    this.sound_duration = sound_duration || 10
+    this.battery_level = battery_level || 0
     this.cmnd_status_topic = `cmnd/${this.mqtt_name}/POWER`
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`

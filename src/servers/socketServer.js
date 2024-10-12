@@ -9,7 +9,7 @@ io.on('connection', (socket) => {
     `A new connection from ${socket.handshake.headers.origin} with id:${socket.id}`
   )
   console.log(`Connected clients: ${io.engine.clientsCount}`)
-
+  DeviceService.loadDeviceCache()
   socket.on('disconnect', () => {
     console.log('A client has been disconnected.')
     console.log(`Connected clients: ${io.engine.clientsCount}`)

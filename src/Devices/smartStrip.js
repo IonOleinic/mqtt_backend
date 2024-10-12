@@ -1,24 +1,25 @@
 const Device = require('./device')
+
 class SmartStrip extends Device {
   constructor(deviceData) {
     deviceData.device_type = 'smartStrip'
     super(deviceData)
     const { switch_type, nr_of_sockets, sensor_data } = deviceData.attributes
-    this.switch_type = switch_type ? switch_type : 'plug'
-    this.nr_of_sockets = nr_of_sockets ? nr_of_sockets : 1
+    this.switch_type = switch_type || 'plug'
+    this.nr_of_sockets = nr_of_sockets || 1
     this.cmnd_power_topic = `cmnd/${this.mqtt_name}/POWER`
     this.power_status = []
     this.stat_power_topics = []
+    this.sensor_update_interval = 3000 //3 seconds
+    this.sensor_update_interval_id = null
     if (this.switch_type == 'plug') {
-      this.sensor_data = sensor_data
-        ? sensor_data
-        : {
-            Today: '---',
-            Total: '--',
-            Power: '--',
-            Voltage: '--',
-            Current: '--',
-          }
+      this.sensor_data = sensor_data || {
+        Today: '---',
+        Total: '--',
+        Power: '--',
+        Voltage: '--',
+        Current: '--',
+      }
       this.stat_sensor_topics = []
       if (this.manufacter === 'tasmota') {
         this.cmnd_sensor_topic = `cmnd/${this.mqtt_name}/STATUS`
@@ -48,9 +49,7 @@ class SmartStrip extends Device {
       this.power_status.push('OFF')
     }
   }
-  changePowerState(socket, state) {
-    this.sendMqttReq(`${this.cmnd_power_topic}${socket}`, state)
-  }
+
   initDevice() {
     this.subscribeForDeviceInfo()
     for (let i = 0; i < this.stat_power_topics.length; i++) {
@@ -63,11 +62,12 @@ class SmartStrip extends Device {
     }
     this.getDeviceInfo()
     this.getInitialState()
-  }
-  updateReq() {
-    if (this.switch_type == 'plug') {
-      if (this.manufacter === 'tasmota')
-        this.sendMqttReq(this.cmnd_sensor_topic, this.cmnd_sensor_payload)
+    if (
+      !this.sensor_update_interval_id &&
+      !this.is_deleted &&
+      this.manufacter == 'tasmota'
+    ) {
+      this.startSensorUpdateInterval()
     }
   }
   getInitialState() {
@@ -78,8 +78,37 @@ class SmartStrip extends Device {
         this.sendMqttReq(`${this.mqtt_name}/${i + 1}/get`, '')
       }
     }
-    this.updateReq()
   }
+  changePowerState(socket, state) {
+    this.sendMqttReq(`${this.cmnd_power_topic}${socket}`, state)
+  }
+  sensorUpdateReq() {
+    if (this.switch_type == 'plug') {
+      if (this.manufacter === 'tasmota')
+        this.sendMqttReq(this.cmnd_sensor_topic, this.cmnd_sensor_payload)
+    }
+  }
+  startSensorUpdateInterval() {
+    clearInterval(this.sensor_update_interval_id)
+    this.sensor_update_interval_id = setInterval(() => {
+      if (this.available) {
+        this.sensorUpdateReq()
+        console.log('\nsensor update ' + this.name + '\n')
+      }
+    }, this.sensor_update_interval)
+  }
+  stopSensorUpdateInterval() {
+    clearInterval(this.sensor_update_interval_id)
+    this.sensor_update_interval_id = null
+  }
+  clearIntervals() {
+    this.stopSensorUpdateInterval()
+  }
+  destroy() {
+    console.log('\ndestroy smart strip ' + this.name + '\n')
+    this.clearIntervals()
+  }
+
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
     let value = payload.toString()
@@ -95,11 +124,11 @@ class SmartStrip extends Device {
     if (this.stat_sensor_topics?.includes(topic)) {
       if (this.manufacter == 'tasmota') {
         let sensor_energy = JSON.parse(value)
-        this.sensor_data.Voltage = sensor_energy.StatusSNS.ENERGY.Voltage
-        this.sensor_data.Current = sensor_energy.StatusSNS.ENERGY.Current
-        this.sensor_data.Power = sensor_energy.StatusSNS.ENERGY.Power
-        this.sensor_data.Today = sensor_energy.StatusSNS.ENERGY.Today
-        this.sensor_data.Total = sensor_energy.StatusSNS.ENERGY.Total
+        this.sensor_data.Voltage = sensor_energy.StatusSNS?.ENERGY?.Voltage
+        this.sensor_data.Current = sensor_energy.StatusSNS?.ENERGY?.Current
+        this.sensor_data.Power = sensor_energy.StatusSNS?.ENERGY?.Power
+        this.sensor_data.Today = sensor_energy.StatusSNS?.ENERGY?.Today
+        this.sensor_data.Total = sensor_energy.StatusSNS?.ENERGY?.Total
       } else if (this.manufacter == 'openBeken') {
         let buffer = topic.split('/')
         switch (buffer[1]) {
@@ -112,7 +141,7 @@ class SmartStrip extends Device {
           case 'current':
             this.sensor_data.Current = payload
             break
-          case 'energycounter_last_hour':
+          case 'energycounter_today':
             this.sensor_data.Today = payload
             break
           case 'energycounter':

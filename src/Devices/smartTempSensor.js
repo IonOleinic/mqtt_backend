@@ -3,9 +3,9 @@ class SmartTempSensor extends Device {
   constructor(deviceData) {
     super(deviceData)
     const { temperature, humidity, battery_level } = deviceData.attributes
-    this.temperature = temperature ? temperature : 0
-    this.humidity = humidity ? humidity : 0
-    this.battery_level = battery_level ? battery_level : 0
+    this.temperature = temperature || 0
+    this.humidity = humidity || 0
+    this.battery_level = battery_level || 0
     if (this.manufacter == 'tasmota') {
       //TODO
     } else if (this.manufacter == 'openBeken') {

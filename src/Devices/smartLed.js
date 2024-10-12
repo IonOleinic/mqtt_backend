@@ -12,14 +12,14 @@ class SmartLed extends Device {
       status,
       palette,
     } = deviceData.attributes
-    this.led_type = led_type ? led_type : 'rgb'
-    this.sub_type = sub_type ? sub_type : 'ledStrip'
-    this.color = color ? color : '555555'
-    this.dimmer = dimmer ? dimmer : 100
-    this.speed = speed ? speed : 1
-    this.scheme = scheme ? scheme : '0'
-    this.status = status ? status : 'OFF'
-    this.palette = palette ? palette : ['', '', '', '', '']
+    this.led_type = led_type || 'rgb'
+    this.sub_type = sub_type || 'ledStrip'
+    this.color = color || '555555'
+    this.dimmer = dimmer || 100
+    this.speed = speed || 1
+    this.scheme = scheme || '0'
+    this.status = status || 'OFF'
+    this.palette = palette || ['', '', '', '', '']
     if (this.manufacter == 'tasmota') {
       this.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`

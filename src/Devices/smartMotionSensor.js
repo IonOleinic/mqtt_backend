@@ -4,9 +4,9 @@ class SmartMotionSensor extends Device {
   constructor(deviceData) {
     super(deviceData)
     const { auto_off, status, battery_level } = deviceData.attributes
-    this.auto_off = auto_off ? auto_off : false
-    this.status = status ? status : 'No Motion'
-    this.battery_level = battery_level ? battery_level : 0
+    this.auto_off = auto_off || false
+    this.status = status || 'No Motion'
+    this.battery_level = battery_level || 0
     if (this.manufacter == 'tasmota') {
       this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
     } else if (this.manufacter == 'openBeken') {

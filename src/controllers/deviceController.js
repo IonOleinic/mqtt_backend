@@ -1,8 +1,6 @@
 const { mqttClient } = require('../mqtt/mqttClient')
 const { DeviceService } = require('../services/deviceService')
-const {
-  mapDeletedDeviceToViewModel,
-} = require('../mappers/deletedDeviceMapper')
+const { mapDeviceToViewModel } = require('../mappers/deviceMapper')
 class DeviceController {
   async createDevice(req, res) {
     let deviceData = req.body
@@ -47,7 +45,7 @@ class DeviceController {
         req.params['id'],
         deviceData
       )
-      res.json(updatedDevice)
+      res.json(mapDeviceToViewModel(updatedDevice))
     } catch (error) {
       console.log(error)
       res.json(deviceData)
@@ -59,6 +57,7 @@ class DeviceController {
         req.query['user_id'],
         req.query['filter']
       )
+      devices = devices.map((device) => mapDeviceToViewModel(device))
       res.json(devices)
     } catch (error) {
       console.log(error)
@@ -68,7 +67,7 @@ class DeviceController {
   async getDeletedDevices(req, res) {
     try {
       let devices = await DeviceService.getDeletedDevices(req.query['user_id'])
-      devices = devices.map((device) => mapDeletedDeviceToViewModel(device))
+      devices = devices.map((device) => mapDeviceToViewModel(device))
       res.json(devices)
     } catch (error) {
       console.log(error)
@@ -78,7 +77,7 @@ class DeviceController {
   async loadDeviceCache(req, res) {
     try {
       const devices = await DeviceService.loadDeviceCache(req.query['user_id'])
-      res.json(devices)
+      res.json(devices.map((device) => mapDeviceToViewModel(device)))
     } catch (error) {
       console.log(error)
       res.json({ succes: false, msg: 'Server error' })
@@ -91,7 +90,7 @@ class DeviceController {
         true
       )
       if (currentDevice) {
-        res.json(mapDeletedDeviceToViewModel(currentDevice))
+        res.json(mapDeviceToViewModel(currentDevice))
       } else {
         res.status(404).json({ msg: 'Device not found!' })
       }
@@ -114,6 +113,25 @@ class DeviceController {
       res.status(500).json({ msg: 'Server error!' })
     }
   }
+  async recoverAllDevices(req, res) {
+    try {
+      const recoverList = req.query['recoverList'].split(',')
+      let result = false
+      for (const deviceId of recoverList) {
+        result = await DeviceService.recoverDevice(deviceId)
+        if (!result) throw `fail to recover device with id=${deviceId}`
+      }
+      if (result) {
+        await DeviceService.loadDeviceCache(req.query['user_id'])
+        res.json({ succes: true })
+      } else {
+        res.json({ succes: false })
+      }
+    } catch (error) {
+      console.log(error)
+      res.json({ succes: false, msg: error.message })
+    }
+  }
   async destroyDevice(req, res) {
     try {
       const result = await DeviceService.destroyDevice(req.params['id'])
@@ -127,14 +145,14 @@ class DeviceController {
       console.log(error)
     }
   }
-  async destroyAllDevicesRecycle(req, res) {
+  async destroyAllDevices(req, res) {
     try {
       const destroyList = req.query['destroyList'].split(',')
       let result = false
-      destroyList.forEach(async (deviceId) => {
+      for (const deviceId of destroyList) {
         result = await DeviceService.destroyDevice(deviceId)
         if (!result) throw `fail to destroy device with id=${deviceId}`
-      })
+      }
       if (result) {
         await DeviceService.loadDeviceCache(req.query['user_id'])
         res.json({ succes: true })
@@ -155,7 +173,7 @@ class DeviceController {
       console.log(error)
     }
     let devices = await DeviceService.getDevices(req.query['user_id'])
-    res.json(devices)
+    res.json(devices.map((device) => mapDeviceToViewModel(device)))
   }
   async getInitState(req, res) {
     try {
