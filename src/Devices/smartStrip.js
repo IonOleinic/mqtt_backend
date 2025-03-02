@@ -7,12 +7,14 @@ class SmartStrip extends Device {
     const { switch_type, nr_of_sockets, sensor_data } = deviceData.attributes
     this.switch_type = switch_type || 'plug'
     this.nr_of_sockets = nr_of_sockets || 1
-    this.cmnd_power_topic = `cmnd/${this.mqtt_name}/POWER`
+    this.cmnd_power_topics = []
     this.power_status = []
     this.stat_power_topics = []
-    this.sensor_update_interval = 3000 //3 seconds
-    this.sensor_update_interval_id = null
+
     if (this.switch_type == 'plug') {
+      this.stat_sensor_topics = []
+      this.sensor_update_interval = 3000 //3 seconds
+      this.sensor_update_interval_id = null
       this.sensor_data = sensor_data || {
         Today: '---',
         Total: '--',
@@ -20,7 +22,7 @@ class SmartStrip extends Device {
         Voltage: '--',
         Current: '--',
       }
-      this.stat_sensor_topics = []
+
       if (this.manufacter === 'tasmota') {
         this.cmnd_sensor_topic = `cmnd/${this.mqtt_name}/STATUS`
         this.cmnd_sensor_payload = '8'
@@ -38,11 +40,14 @@ class SmartStrip extends Device {
     }
     for (let i = 0; i < this.nr_of_sockets; i++) {
       if (this.manufacter === 'openBeken') {
+        this.cmnd_power_topics.push(`cmnd/${this.mqtt_name}/POWER${i + 1}`)
         this.stat_power_topics.push(`${this.mqtt_name}/${i + 1}/get`)
       } else if (this.manufacter === 'tasmota') {
         if (this.nr_of_sockets == 1) {
+          this.cmnd_power_topics.push(`cmnd/${this.mqtt_name}/POWER`)
           this.stat_power_topics.push(`stat/${this.mqtt_name}/POWER`)
         } else {
+          this.cmnd_power_topics.push(`cmnd/${this.mqtt_name}/POWER${i + 1}`)
           this.stat_power_topics.push(`stat/${this.mqtt_name}/POWER${i + 1}`)
         }
       }
@@ -73,14 +78,14 @@ class SmartStrip extends Device {
   getInitialState() {
     for (let i = 0; i < this.nr_of_sockets; i++) {
       if (this.manufacter === 'tasmota') {
-        this.changePowerState(i + 1, '')
+        this.sendMqttReq(this.cmnd_power_topics[i], '')
       } else if (this.manufacter === 'openBeken') {
-        this.sendMqttReq(`${this.mqtt_name}/${i + 1}/get`, '')
+        this.sendMqttReq(this.stat_power_topics[i], '')
       }
     }
   }
   changePowerState(socket, state) {
-    this.sendMqttReq(`${this.cmnd_power_topic}${socket}`, state)
+    this.sendMqttReq(this.cmnd_power_topics[socket - 1], state)
   }
   sensorUpdateReq() {
     if (this.switch_type == 'plug') {

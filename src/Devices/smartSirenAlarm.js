@@ -47,10 +47,10 @@ class SmartSirenAlarm extends Device {
 
   getInitialState() {
     if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
+      this.sendMqttReq(this.cmnd_status_topic, '')
       //TODO
     } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(`${this.receive_status_topic}`, '')
+      this.sendMqttReq(this.receive_status_topic, '')
       if (!this.temperature) this.sendMqttReq(`${this.receive_temp_topic}`, '')
       if (!this.humidity) this.sendMqttReq(`${this.receive_hum_topic}`, '')
       if (!this.battery_level)
@@ -59,7 +59,6 @@ class SmartSirenAlarm extends Device {
   }
   updateOptions(newSound, newVolume, newDuration) {
     if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
       //TODO
     } else if (this.manufacter == 'openBeken') {
       this.sendMqttReq(`${this.mqtt_name}/4/set`, newSound, true)
@@ -71,14 +70,7 @@ class SmartSirenAlarm extends Device {
     this.updateOptions(this.sound, this.volume, this.sound_duration)
   }
   changePowerState(socket_nr = 1, status) {
-    if (status == 'TOGGLE') {
-      status = this.status == 'OFF' ? 'ON' : 'OFF'
-    }
-    if (this.manufacter == 'tasmota') {
-      this.sendMqttReq(this.cmnd_status_topic, status)
-    } else if (this.manufacter == 'openBeken') {
-      this.sendMqttReq(this.cmnd_status_topic, status)
-    }
+    this.sendMqttReq(this.cmnd_status_topic, status)
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
