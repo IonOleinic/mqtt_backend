@@ -6,7 +6,6 @@ const SmartIR = require('../devices/smartIR.js')
 const SmartTempSensor = require('../devices/smartTempSensor.js')
 const SmartDoorSensor = require('../devices/smartDoorSensor.js')
 const SmartSirenAlarm = require('../devices/smartSirenAlarm.js')
-const SmartValve = require('../devices/smartValve.js')
 class DeviceCache {
   static devices = new Map()
   static tempDevices = new Map()
