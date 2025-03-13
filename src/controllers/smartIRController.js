@@ -14,7 +14,7 @@ class SmartIRController {
         res.json({ succes: true })
       } catch (error) {
         console.log(error)
-        res.json({ succes: false })
+        res.status(500).json({ msg: 'Server error!' })
       }
     }
   }
@@ -26,7 +26,7 @@ class SmartIRController {
       res.status(201).json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
 }

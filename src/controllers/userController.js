@@ -11,7 +11,7 @@ class UserController {
       )
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async getUser(req, res) {
@@ -24,7 +24,7 @@ class UserController {
       }
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async getUserByEmail(req, res) {
@@ -37,7 +37,7 @@ class UserController {
       }
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async createUser(req, res) {
@@ -47,7 +47,7 @@ class UserController {
       res.sendStatus(201)
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async updateUser(req, res) {
@@ -62,17 +62,13 @@ class UserController {
   }
   async deleteUser(req, res) {
     try {
-      let users = await UserService.deleteUser(req.params['id'])
-      res.json(users)
+      const result = await UserService.deleteUser(req.params['id'])
+      if (result) res.json({ succes: true })
+      else res.json({ succes: false })
     } catch (error) {
       console.log(error)
+      res.status(500).json({ msg: 'Server error!' })
     }
-    let users = await UserService.getAllUsers()
-    res.json(
-      users.map((user) => {
-        mapUserToViewModel(user)
-      })
-    )
   }
 }
 

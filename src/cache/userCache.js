@@ -68,7 +68,7 @@ class UserCache {
       if (userDB) {
         await userDB.destroy()
       }
-      return await this.getUsers()
+      return true
     } catch (error) {
       throw error
     }

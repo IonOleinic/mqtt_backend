@@ -15,7 +15,7 @@ class SceneCache {
       let scenesFromDB = await Scene.findAll()
       scenesFromDB.forEach((instance) => {
         let sceneDB = instance.dataValues
-        this.scenes.set(sceneDB.id.toString(), this.buildSceneObj(sceneDB))
+        this.scenes.set(sceneDB.id, this.buildSceneObj(sceneDB))
       })
     } catch (error) {
       console.log(error)
@@ -29,7 +29,6 @@ class SceneCache {
     return afterDelete
   }
   async getScene(sceneId) {
-    sceneId = sceneId.toString()
     try {
       if (this.scenes.has(sceneId)) {
         return this.scenes.get(sceneId)
@@ -54,14 +53,13 @@ class SceneCache {
       const sceneDB = await Scene.create(sceneData)
       sceneData.id = sceneDB.id
       let scene = this.buildSceneObj(sceneDB.dataValues)
-      this.scenes.set(sceneDB.id.toString(), scene)
+      this.scenes.set(sceneDB.id, scene)
       return scene
     } catch (error) {
       throw error
     }
   }
   async updateScene(sceneId, sceneData) {
-    sceneId = sceneId.toString()
     try {
       const sceneDB = await Scene.findByPk(sceneId)
       let scene = this.scenes.get(sceneId)
@@ -76,7 +74,6 @@ class SceneCache {
     }
   }
   async deleteScene(sceneId) {
-    sceneId = sceneId.toString()
     try {
       const sceneDB = await Scene.findByPk(sceneId)
       if (sceneDB) {

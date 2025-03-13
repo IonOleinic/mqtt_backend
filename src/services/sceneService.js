@@ -1,8 +1,15 @@
 const SceneCache = require('../cache/sceneCache')
+const { filterSceneList, sortListBy } = require('../helpers/helpers')
 
 class SceneService {
-  static async getAllScenes(userId) {
+  static async getScenes(userId, filter, order) {
     let scenes = await SceneCache.getScenes(userId)
+    if (filter) {
+      scenes = filterSceneList(scenes, filter)
+    }
+    if (order) {
+      scenes = sortListBy(scenes, order)
+    }
     return scenes
   }
   static async getSceneById(sceneId) {

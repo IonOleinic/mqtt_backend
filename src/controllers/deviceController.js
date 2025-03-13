@@ -35,7 +35,7 @@ class DeviceController {
       }
     } catch (error) {
       console.log(error)
-      res.status(500).json({ succes: false, msg: 'Error ocurred!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async updateDevice(req, res) {
@@ -48,20 +48,21 @@ class DeviceController {
       res.json(mapDeviceToViewModel(updatedDevice))
     } catch (error) {
       console.log(error)
-      res.json(deviceData)
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async getDevices(req, res) {
     try {
       let devices = await DeviceService.getDevices(
         req.query['user_id'],
-        req.query['filter']
+        JSON.parse(req.query['filter'] || '{}'),
+        req.query['order']
       )
       devices = devices.map((device) => mapDeviceToViewModel(device))
       res.json(devices)
     } catch (error) {
       console.log(error)
-      res.json({ succes: false, msg: 'Server error' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async getDeletedDevices(req, res) {
@@ -71,7 +72,7 @@ class DeviceController {
       res.json(devices)
     } catch (error) {
       console.log(error)
-      res.json({ succes: false, msg: 'Server error' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async loadDeviceCache(req, res) {
@@ -80,7 +81,7 @@ class DeviceController {
       res.json(devices.map((device) => mapDeviceToViewModel(device)))
     } catch (error) {
       console.log(error)
-      res.json({ succes: false, msg: 'Server error' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async getDevice(req, res) {
@@ -94,6 +95,18 @@ class DeviceController {
       } else {
         res.status(404).json({ msg: 'Device not found!' })
       }
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'Server error!' })
+    }
+  }
+  async getSceneInvolvedDevices(req, res) {
+    try {
+      let devices = await DeviceService.getSceneInvolvedDevices(
+        req.query['user_id']
+      )
+      devices = devices.map((device) => mapDeviceToViewModel(device))
+      res.json(devices)
     } catch (error) {
       console.log(error)
       res.status(500).json({ msg: 'Server error!' })
@@ -129,7 +142,7 @@ class DeviceController {
       }
     } catch (error) {
       console.log(error)
-      res.json({ succes: false, msg: error.message })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async destroyDevice(req, res) {
@@ -143,6 +156,7 @@ class DeviceController {
       }
     } catch (error) {
       console.log(error)
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async destroyAllDevices(req, res) {
@@ -166,14 +180,13 @@ class DeviceController {
   }
   async deleteDevice(req, res) {
     try {
-      if (req.params['id']) {
-        await DeviceService.deleteDevice(req.params['id'])
-      }
+      const result = await DeviceService.deleteDevice(req.params['id'])
+      if (result) res.json({ succes: true })
+      else res.json({ succes: false })
     } catch (error) {
       console.log(error)
+      res.status(500).json({ msg: 'Server error!' })
     }
-    let devices = await DeviceService.getDevices(req.query['user_id'])
-    res.json(devices.map((device) => mapDeviceToViewModel(device)))
   }
   async getInitState(req, res) {
     try {
@@ -195,7 +208,7 @@ class DeviceController {
       res.json(mqttGroups)
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async getDeviceTypes(req, res) {
@@ -204,7 +217,7 @@ class DeviceController {
       res.json(deviceTypes)
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
 }

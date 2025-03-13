@@ -47,7 +47,7 @@ class MqttController {
         }
         checkIfInScene(
           currentDevice,
-          await SceneService.getAllScenes(),
+          await SceneService.getScenes(),
           topic,
           payload
         )

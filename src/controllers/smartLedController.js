@@ -10,7 +10,7 @@ class SmartLedController {
       res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async changeDimmer(req, res) {
@@ -22,7 +22,7 @@ class SmartLedController {
       res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async changeColor(req, res) {
@@ -34,7 +34,7 @@ class SmartLedController {
       res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async changeSpeed(req, res) {
@@ -46,7 +46,7 @@ class SmartLedController {
       res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async changeScheme(req, res) {
@@ -58,7 +58,7 @@ class SmartLedController {
       res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
   async changePalette(req, res) {
@@ -70,7 +70,7 @@ class SmartLedController {
       res.json({ succes: true })
     } catch (error) {
       console.log(error)
-      res.json({ succes: false })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
 }

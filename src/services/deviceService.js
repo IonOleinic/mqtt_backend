@@ -1,4 +1,9 @@
-const { filterDeviceList, getAllGroups } = require('../helpers/helpers')
+const {
+  filterDeviceList,
+  getAllGroups,
+  extractSceneInvolvedDevices,
+  sortListBy,
+} = require('../helpers/helpers')
 const { DeviceTypes } = require('../helpers/deviceTypes')
 const { DeviceCache } = require('../cache/deviceCache')
 const SceneCache = require('../cache/sceneCache')
@@ -21,16 +26,24 @@ class DeviceService {
     let devicesToReturn = await DeviceCache.loadDeviceCache(userId)
     return devicesToReturn
   }
-  static async getDevices(userId, filter, includeDeleted) {
+  static async getDevices(userId, filter, order, includeDeleted) {
     let devices = await DeviceCache.getDevices(userId, includeDeleted)
     if (filter) {
-      devices = filterDeviceList(filter, devices)
+      devices = filterDeviceList(devices, filter)
+    }
+    if (order) {
+      devices = sortListBy(devices, order)
     }
     return devices
   }
   static async getDeletedDevices(userId) {
     let devices = await DeviceCache.getDeletedDevices(userId)
     return devices
+  }
+  static async getSceneInvolvedDevices(userId) {
+    let devices = await DeviceCache.getDevices(userId)
+    let scenes = await SceneCache.getScenes(userId)
+    return extractSceneInvolvedDevices(devices, scenes)
   }
   static async getDeviceById(deviceId, includeDeleted) {
     return await DeviceCache.getDeviceById(deviceId, includeDeleted)

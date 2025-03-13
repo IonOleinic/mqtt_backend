@@ -34,7 +34,7 @@ class TokenController {
       )
     } catch (error) {
       console.log(error)
-      res.status(500).json({ msg: 'Error occured!' })
+      res.status(500).json({ msg: 'Server error!' })
     }
   }
 }
