@@ -6,13 +6,15 @@ const SmartIR = require('../devices/smartIR.js')
 const SmartTempSensor = require('../devices/smartTempSensor.js')
 const SmartDoorSensor = require('../devices/smartDoorSensor.js')
 const SmartSirenAlarm = require('../devices/smartSirenAlarm.js')
+const { GroupService } = require('../services/groupService.js')
+
 class DeviceCache {
   static devices = new Map()
   static tempDevices = new Map()
 
   static async loadDeviceCache(userId) {
     try {
-      for (let device of Array.from(this.devices.values())) {
+      for (const device of Array.from(this.devices.values())) {
         device.clearIntervals() //clear all devices (setInterval functions) from memory
       }
 
@@ -25,19 +27,21 @@ class DeviceCache {
         this.devices = new Map()
         devicesFromDB = await Device.findAll()
       }
-      devicesFromDB.forEach((instance) => {
-        let deviceData = instance.dataValues
-        this.devices.set(
-          deviceData.id?.toString(),
-          this.buildDeviceObj(deviceData)
+      const groups = await GroupService.getGroupsAsMap(userId)
+      for (const instance of devicesFromDB) {
+        const deviceData = instance.dataValues
+        const groupName = groups.get(deviceData.group_id)?.name || ''
+        const deviceObj = await this.buildDeviceObj(
+          { ...deviceData, group_name: groupName },
+          false
         )
-      })
+        this.devices.set(deviceData.id, deviceObj)
+      }
     } catch (error) {
       console.log(error)
     }
     return await this.getDevices(userId)
   }
-
   static async getDevices(userId, includeDeleted) {
     let allDevices = Array.from(this.devices.values()).filter((device) => {
       return (
@@ -69,7 +73,7 @@ class DeviceCache {
         // If the device is not in the cache, load it from the database
         const deviceDB = await Device.findByPk(deviceId)
         if (deviceDB) {
-          device = this.buildDeviceObj(deviceDB.dataValues)
+          device = await this.buildDeviceObj(deviceDB.dataValues)
           this.devices.set(deviceId, device)
         }
       }
@@ -87,12 +91,12 @@ class DeviceCache {
       device = allDevices.filter((device) => device.mqtt_name == mqttName)[0]
       if (!device) {
         // If the device is not in the cache, load it from the database
-        const deviceDB = await Device.findAll({
+        const deviceDB = await Device.findOne({
           where: { mqtt_name: mqttName },
-        })[0]
+        })
         if (deviceDB) {
-          device = this.buildDeviceObj(deviceDB.dataValues)
-          this.devices.set(deviceDB.id.toString(), device) //load it in cache
+          device = await this.buildDeviceObj(deviceDB.dataValues)
+          this.devices.set(deviceDB.id, device) //load it in cache
         }
       }
       if (!includeDeleted) {
@@ -109,12 +113,12 @@ class DeviceCache {
       device = allDevices.filter((device) => device.name == deviceName)[0]
       if (!device) {
         // If the device is not in the cache, load it from the database
-        const deviceDB = await Device.findAll({
+        const deviceDB = await Device.findOne({
           where: { name: deviceName },
-        })[0]
+        })
         if (deviceDB) {
-          device = this.buildDeviceObj(deviceDB.dataValues)
-          this.devices.set(deviceDB.id.toString(), device) //load it in cache
+          device = await this.buildDeviceObj(deviceDB.dataValues)
+          this.devices.set(deviceDB.id, device) //load it in cache
         }
       }
       if (!includeDeleted) {
@@ -126,11 +130,10 @@ class DeviceCache {
   }
   static async insertDevice(deviceData) {
     let deviceDB = undefined
-    deviceData.name = deviceData.name
     try {
       deviceDB = await Device.create(deviceData)
-      let device = this.buildDeviceObj(deviceDB.dataValues)
-      this.devices.set(deviceDB.id.toString(), device)
+      let device = await this.buildDeviceObj(deviceDB.dataValues)
+      this.devices.set(deviceDB.id, device)
       return device
     } catch (error) {
       if (deviceDB) deviceDB.destroy()
@@ -139,14 +142,11 @@ class DeviceCache {
   }
   static async updateDevice(deviceId, deviceData) {
     let device = deviceData
-    deviceData.mqtt_group = deviceData.mqtt_group.toString()
-    // this.constructAttributes(deviceData)
     try {
       const deviceDB = await Device.findByPk(deviceId)
       if (deviceDB) {
         await deviceDB.update(deviceData)
-        deviceData.mqtt_group = deviceData.mqtt_group.split(',')
-        device = this.devices.get(deviceId.toString())
+        device = this.devices.get(deviceId)
         this.updateDeviceLocaly(device, deviceData)
         this.devices.set(deviceId, device)
       }
@@ -161,7 +161,7 @@ class DeviceCache {
       if (deviceDB) {
         deviceDB.is_deleted = false
         await deviceDB.update(deviceDB.dataValues)
-        let device = this.devices.get(deviceId.toString()) // update device in cache
+        let device = this.devices.get(deviceId) // update device in cache
         device.is_deleted = true
         this.devices.set(deviceId, device)
       }
@@ -171,7 +171,6 @@ class DeviceCache {
     }
   }
   static async updateDeviceOnlyDB(deviceId, deviceData) {
-    deviceData.mqtt_group = deviceData.mqtt_group.toString()
     this.constructAttributes(deviceData)
     try {
       const deviceDB = await Device.findByPk(deviceId)
@@ -192,7 +191,7 @@ class DeviceCache {
         // } else {
         deviceDB.is_deleted = true
         await deviceDB.update(deviceDB.dataValues)
-        let device = this.devices.get(deviceId.toString())
+        let device = this.devices.get(deviceId)
         device.is_deleted = true
         device.clearIntervals()
         this.devices.set(deviceId, device)
@@ -208,7 +207,7 @@ class DeviceCache {
       const deviceDB = await Device.findByPk(deviceId)
       if (deviceDB) {
         await deviceDB.destroy()
-        let device = this.devices.get(deviceId.toString())
+        let device = this.devices.get(deviceId)
         device.destroy()
         this.devices.delete(deviceId)
       }
@@ -235,8 +234,12 @@ class DeviceCache {
     )[0]
     return device
   }
-  static buildDeviceObj(deviceData) {
+  static async buildDeviceObj(deviceData, addGroupName = true) {
     let device = {}
+    if (addGroupName) {
+      deviceData.group_name =
+        (await GroupService.getGroupById(deviceData.group_id))?.name || ''
+    }
     switch (deviceData.device_type) {
       case 'smartPlug':
       case 'smartSwitch':
@@ -274,7 +277,8 @@ class DeviceCache {
   static updateDeviceLocaly(oldDevice, newDevice) {
     oldDevice.name = newDevice.name
     oldDevice.mqtt_name = newDevice.mqtt_name
-    oldDevice.mqtt_group = newDevice.mqtt_group
+    oldDevice.group_id = newDevice.group_id
+    oldDevice.group_name = newDevice.group_name
     oldDevice.favorite = newDevice.favorite
     oldDevice.is_deleted = newDevice.is_deleted
     oldDevice.manufacter = newDevice.manufacter

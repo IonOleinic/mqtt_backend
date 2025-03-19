@@ -6,7 +6,8 @@ class Device {
     user_id,
     manufacter,
     mqtt_name,
-    mqtt_group,
+    group_name,
+    group_id,
     device_type,
     favorite,
     is_deleted,
@@ -35,7 +36,8 @@ class Device {
       ? true
       : false
     this.mqtt_name = mqtt_name
-    this.mqtt_group = mqtt_group ? mqtt_group.split(',') : []
+    this.group_id = group_id
+    this.group_name = group_name
     this.device_type = device_type
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'

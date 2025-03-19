@@ -202,15 +202,6 @@ class DeviceController {
       res.status(500).json({ msg: 'Error occured!' })
     }
   }
-  async getMqttGroups(req, res) {
-    try {
-      let mqttGroups = await DeviceService.getMqttGroups(req.query['user_id'])
-      res.json(mqttGroups)
-    } catch (error) {
-      console.log(error)
-      res.status(500).json({ msg: 'Server error!' })
-    }
-  }
   async getDeviceTypes(req, res) {
     try {
       let deviceTypes = await DeviceService.getDeviceTypes()

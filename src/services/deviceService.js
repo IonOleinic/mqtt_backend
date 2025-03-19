@@ -1,6 +1,5 @@
 const {
   filterDeviceList,
-  getAllGroups,
   extractSceneInvolvedDevices,
   sortListBy,
 } = require('../helpers/helpers')
@@ -9,7 +8,7 @@ const { DeviceCache } = require('../cache/deviceCache')
 const SceneCache = require('../cache/sceneCache')
 
 class DeviceService {
-  static getAllTempDevices() {
+  static getTempDevices() {
     return DeviceCache.getTempDevices()
   }
   static insertTempDevice(tempDevice) {
@@ -23,11 +22,11 @@ class DeviceService {
   }
   static async loadDeviceCache(userId) {
     console.log('\nLoading devices from database\n')
-    let devicesToReturn = await DeviceCache.loadDeviceCache(userId)
+    let devicesToReturn = await DeviceCache.loadDeviceCache(Number(userId))
     return devicesToReturn
   }
   static async getDevices(userId, filter, order, includeDeleted) {
-    let devices = await DeviceCache.getDevices(userId, includeDeleted)
+    let devices = await DeviceCache.getDevices(Number(userId), includeDeleted)
     if (filter) {
       devices = filterDeviceList(devices, filter)
     }
@@ -37,16 +36,16 @@ class DeviceService {
     return devices
   }
   static async getDeletedDevices(userId) {
-    let devices = await DeviceCache.getDeletedDevices(userId)
+    let devices = await DeviceCache.getDeletedDevices(Number(userId))
     return devices
   }
   static async getSceneInvolvedDevices(userId) {
-    let devices = await DeviceCache.getDevices(userId)
-    let scenes = await SceneCache.getScenes(userId)
+    let devices = await DeviceCache.getDevices(Number(userId))
+    let scenes = await SceneCache.getScenes(Number(userId))
     return extractSceneInvolvedDevices(devices, scenes)
   }
   static async getDeviceById(deviceId, includeDeleted) {
-    return await DeviceCache.getDeviceById(deviceId, includeDeleted)
+    return await DeviceCache.getDeviceById(Number(deviceId), includeDeleted)
   }
   static async getDeviceByMqttName(mqttName, includeDeleted) {
     return await DeviceCache.getDeviceByMqttName(mqttName, includeDeleted)
@@ -58,24 +57,20 @@ class DeviceService {
     return await DeviceCache.insertDevice(deviceData)
   }
   static async updateDeviceOnlyDB(deviceId, deviceData) {
-    return await DeviceCache.updateDeviceOnlyDB(deviceId, deviceData)
+    return await DeviceCache.updateDeviceOnlyDB(Number(deviceId), deviceData)
   }
   static async updateDevice(deviceId, deviceData) {
-    return await DeviceCache.updateDevice(deviceId, deviceData)
+    return await DeviceCache.updateDevice(Number(deviceId), deviceData)
   }
   static async deleteDevice(deviceId) {
-    await SceneCache.deleteScenesCascade(deviceId)
-    return await DeviceCache.deleteDevice(deviceId)
+    await SceneCache.deleteScenesCascade(Number(deviceId))
+    return await DeviceCache.deleteDevice(Number(deviceId))
   }
   static async destroyDevice(deviceId) {
-    return await DeviceCache.destroyDevice(deviceId)
+    return await DeviceCache.destroyDevice(Number(deviceId))
   }
   static async recoverDevice(deviceId) {
-    return await DeviceCache.recoverDevice(deviceId)
-  }
-  static async getMqttGroups(userId) {
-    let mqttGroups = getAllGroups(await DeviceService.getDevices(userId))
-    return mqttGroups
+    return await DeviceCache.recoverDevice(Number(deviceId))
   }
   static getDeviceTypes() {
     return DeviceTypes

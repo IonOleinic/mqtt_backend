@@ -19,6 +19,5 @@ deviceRoutes.get('/deleted-devices', deviceController.getDeletedDevices)
 deviceRoutes.get('/load-device-cache', deviceController.loadDeviceCache)
 deviceRoutes.get('/device/getInitState/:id', deviceController.getInitState)
 deviceRoutes.get('/deviceTypes', deviceController.getDeviceTypes)
-deviceRoutes.get('/mqttGroups', deviceController.getMqttGroups)
 
 module.exports = { deviceRoutes }

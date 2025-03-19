@@ -12,27 +12,12 @@ const checkIfInScene = (device, scenes, topic, payload) => {
     }
   }
 }
-const getAllGroups = (devices) => {
-  let mqttGroups = []
-  devices.forEach((device) => {
-    let mqtt_group = device.mqtt_group
-    if (typeof mqtt_group == 'string') {
-      mqtt_group = mqtt_group.split(',')
-    }
-    mqtt_group.forEach((group) => {
-      if (!mqttGroups.includes(group)) {
-        mqttGroups.push(group)
-      }
-    })
-  })
-  return mqttGroups
-}
 const filterDeviceList = (devices, filter) => {
   let filteredDevices = devices.filter((device) => {
     let toReturn = true
     if (filter) {
-      if (filter.group !== null && filter.group !== undefined) {
-        if (!device.mqtt_group.includes(filter.group)) {
+      if (filter.name != null && filter.name != undefined) {
+        if (!device.name.toUpperCase().includes(filter.name.toUpperCase())) {
           toReturn = false
         }
       }
@@ -41,8 +26,12 @@ const filterDeviceList = (devices, filter) => {
           toReturn = false
         }
       }
-      if (filter.name != null && filter.name != undefined) {
-        if (!device.name.toUpperCase().includes(filter.name.toUpperCase())) {
+      if (
+        filter.groups !== null &&
+        filter.groups !== undefined &&
+        filter.groups.length > 0
+      ) {
+        if (!filter.groups.includes(device.group_id)) {
           toReturn = false
         }
       }
@@ -55,6 +44,16 @@ const filterSceneList = (scenes, filter) => {
   let filteredScenes = scenes.filter((scene) => {
     let toReturn = true
     if (filter) {
+      if (filter.name != null && filter.name != undefined) {
+        if (!scene.name.toUpperCase().includes(filter.name.toUpperCase())) {
+          toReturn = false
+        }
+      }
+      if (filter.favorite !== null && filter.favorite !== undefined) {
+        if (scene.favorite !== filter.favorite) {
+          toReturn = false
+        }
+      }
       if (
         filter.devices !== null &&
         filter.devices !== undefined &&
@@ -64,16 +63,6 @@ const filterSceneList = (scenes, filter) => {
           !filter.devices.includes(scene.cond_device_id) &&
           !filter.devices.includes(scene.exec_device_id)
         ) {
-          toReturn = false
-        }
-      }
-      if (filter.favorite !== null && filter.favorite !== undefined) {
-        if (scene.favorite !== filter.favorite) {
-          toReturn = false
-        }
-      }
-      if (filter.name != null && filter.name != undefined) {
-        if (!scene.name.toUpperCase().includes(filter.name.toUpperCase())) {
           toReturn = false
         }
       }
@@ -111,10 +100,7 @@ const extractSceneInvolvedDevices = (devices, scenes) => {
   return involvedDevices
 }
 
-const subscribeToTopic = (
-  mqttextractSceneInvolvedDevicesClient,
-  topicToSubcribe
-) => {
+const subscribeToTopic = (topicToSubcribe) => {
   mqttClient.subscribe(`${topicToSubcribe}`, () => {
     console.log(`Client subscried on ${topicToSubcribe}`)
   })
@@ -122,7 +108,6 @@ const subscribeToTopic = (
 
 module.exports = {
   checkIfInScene,
-  getAllGroups,
   filterDeviceList,
   filterSceneList,
   sortListBy,

@@ -1,9 +1,10 @@
 const { UserService } = require('../services/userService')
 const { mapUserToViewModel } = require('../mappers/userMapper')
+
 class UserController {
   async getUsers(req, res) {
     try {
-      let users = await UserService.getAllUsers()
+      let users = await UserService.getUsers()
       res.json(
         users.map((user) => {
           mapUserToViewModel(user)

@@ -4,7 +4,7 @@ class SceneController {
   async getScenes(req, res) {
     try {
       let scenes = await SceneService.getScenes(
-        Number(req.query['user_id']),
+        req.query['user_id'],
         JSON.parse(req.query['filter'] || '{}'),
         req.query['order']
       )
@@ -20,9 +20,7 @@ class SceneController {
   }
   async getScene(req, res) {
     try {
-      let currentScene = await SceneService.getSceneById(
-        Number(req.params['id'])
-      )
+      let currentScene = await SceneService.getSceneById(req.params['id'])
       if (currentScene) {
         res.json(mapSceneToViewModel(currentScene))
       } else {
@@ -35,7 +33,7 @@ class SceneController {
   }
   async createScene(req, res) {
     let sceneData = req.body
-    sceneData.user_id = Number(req.query['user_id'])
+    sceneData.user_id = req.query['user_id']
     try {
       await SceneService.insertScene(sceneData)
       res.sendStatus(201)
@@ -48,7 +46,7 @@ class SceneController {
     let sceneData = req.body
     try {
       let updatedScene = await SceneService.updateScene(
-        Number(req.params['id']),
+        req.params['id'],
         sceneData
       )
       res.json(mapSceneToViewModel(updatedScene))
@@ -59,7 +57,7 @@ class SceneController {
   }
   async deleteScene(req, res) {
     try {
-      const result = await SceneService.deleteScene(Number(req.params['id']))
+      const result = await SceneService.deleteScene(req.params['id'])
       if (result) res.json({ succes: true })
       else res.json({ succes: false })
     } catch (error) {

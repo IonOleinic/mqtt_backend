@@ -17,8 +17,8 @@ module.exports = (sequelize, DataTypes) => {
     mqtt_name: {
       type: DataTypes.STRING,
     },
-    mqtt_group: {
-      type: DataTypes.STRING,
+    group_id: {
+      type: DataTypes.INTEGER,
     },
     device_type: {
       type: DataTypes.STRING,
