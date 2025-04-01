@@ -171,7 +171,6 @@ class DeviceCache {
     }
   }
   static async updateDeviceOnlyDB(deviceId, deviceData) {
-    this.constructAttributes(deviceData)
     try {
       const deviceDB = await Device.findByPk(deviceId)
       if (deviceDB) {
@@ -283,58 +282,6 @@ class DeviceCache {
     oldDevice.is_deleted = newDevice.is_deleted
     oldDevice.manufacter = newDevice.manufacter
     oldDevice.available = newDevice.available
-  }
-  static constructAttributes(deviceData) {
-    if (deviceData.device_type === 'smartTempSensor') {
-      deviceData.attributes = {
-        temperature: deviceData.temperature,
-        humidity: deviceData.humidity,
-        battery_level: deviceData.battery_level,
-      }
-    }
-    if (deviceData.device_type === 'smartStrip') {
-      deviceData.attributes = {
-        sensor_data: deviceData.sensor_data,
-        switch_type: deviceData.switch_type,
-        nr_of_sockets: deviceData.nr_of_sockets,
-      }
-    }
-    if (deviceData.device_type === 'smartLed') {
-      deviceData.attributes = {
-        status: deviceData.status,
-        led_type: deviceData.led_type,
-        sub_type: deviceData.sub_type,
-        color: deviceData.color,
-        scheme: deviceData.scheme,
-        dimmer: deviceData.dimmer,
-        speed: deviceData.speed,
-        palette: deviceData.palette,
-      }
-    }
-    if (deviceData.device_type === 'smartSirenAlarm') {
-      deviceData.attributes = {
-        status: deviceData.status,
-        temperature: deviceData.temperature,
-        humidity: deviceData.humidity,
-        volume: deviceData.volume,
-        sound: deviceData.sound,
-        sound_duration: deviceData.sound_duration,
-        battery_level: deviceData.battery_level,
-      }
-    }
-    if (deviceData.device_type === 'smartDoorSensor') {
-      deviceData.attributes = {
-        status: deviceData.status,
-        battery_level: deviceData.battery_level,
-      }
-    }
-    if (deviceData.device_type === 'smartMotionSensor') {
-      deviceData.attributes = {
-        auto_off: deviceData.auto_off,
-        status: deviceData.status,
-        battery_level: deviceData.battery_level,
-      }
-    }
   }
 }
 

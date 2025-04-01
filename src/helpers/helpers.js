@@ -71,7 +71,6 @@ const filterSceneList = (scenes, filter) => {
   })
   return filteredScenes
 }
-
 const sortListBy = (list, order = 'DATE') => {
   if (order.toUpperCase() === 'NAME') {
     list = list.sort((a, b) => (a.name > b.name ? 1 : -1))
@@ -82,7 +81,6 @@ const sortListBy = (list, order = 'DATE') => {
   }
   return list
 }
-
 const extractSceneInvolvedDevices = (devices, scenes) => {
   let involvedDevices = []
   devices.forEach((device) => {
@@ -99,8 +97,7 @@ const extractSceneInvolvedDevices = (devices, scenes) => {
   })
   return involvedDevices
 }
-
-const subscribeToTopic = (topicToSubcribe) => {
+const subscribeToTopic = (mqttClient, topicToSubcribe) => {
   mqttClient.subscribe(`${topicToSubcribe}`, () => {
     console.log(`Client subscried on ${topicToSubcribe}`)
   })

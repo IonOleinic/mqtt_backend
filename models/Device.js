@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     device_type: {
       type: DataTypes.STRING,
+      allowNull: false,
+    },
+    sub_type: {
+      type: DataTypes.STRING,
     },
     favorite: {
       type: DataTypes.BOOLEAN,

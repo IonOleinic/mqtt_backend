@@ -4,7 +4,7 @@ const { mapDeviceToViewModel } = require('../mappers/deviceMapper')
 class DeviceController {
   async createDevice(req, res) {
     let deviceData = req.body
-    deviceData.user_id = req.query['user_id']
+    deviceData.user_id = Number(req.query['user_id'])
     try {
       const sameMqttNameDevice = await DeviceService.getDeviceByMqttName(
         deviceData.mqtt_name,
@@ -16,17 +16,24 @@ class DeviceController {
       )
       if (sameMqttNameDevice || sameNameDevice) {
         if (sameNameDevice) {
-          res.status(409).json({ msg: 'Device already exists with this name!' })
+          res
+            .status(409)
+            .json({
+              msg: 'A device with same name or MQTT Name already exists!',
+            })
         } else {
           if (deviceData.device_type === 'smartIR') {
             await DeviceService.insertDevice(deviceData)
-            res.status(201).json({ msg: 'Device added with success' })
+            res.status(201).json({ msg: 'A device added with success' })
           } else {
             if (sameMqttNameDevice.is_deleted)
-              res
-                .status(409)
-                .json({ msg: 'Device exists in your recycle bin!' })
-            else res.status(409).json({ msg: 'Device already exists!' })
+              res.status(409).json({
+                msg: 'A device with same MQTT Name was found in your recycle bin!',
+              })
+            else
+              res.status(409).json({
+                msg: 'A device with same name or MQTT Name already exists!',
+              })
           }
         }
       } else {

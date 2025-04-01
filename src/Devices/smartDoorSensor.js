@@ -3,31 +3,38 @@ const Device = require('./device')
 class SmartDoorSensor extends Device {
   constructor(deviceData) {
     super(deviceData)
-    const { status, battery_level } = deviceData.attributes
-    this.status = status || 'Closed'
-    this.battery_level = battery_level || 0
+    const devDataAttr = deviceData.attributes || {}
+    this.attributes = devDataAttr
+    this.attributes.status = devDataAttr.status || 'Closed'
+    this.attributes.battery_level = devDataAttr.battery_level || 0
     if (this.manufacter == 'tasmota') {
-      this.receive_status_topic = `stat/${this.mqtt_name}/POWER`
+      this.attributes.receive_status_topic =
+        devDataAttr.receive_status_topic || `stat/${this.mqtt_name}/POWER`
       //Battery topic TODO
     } else if (this.manufacter == 'openBeken') {
-      this.receive_status_topic = `${this.mqtt_name}/1/get`
-      this.receive_batt_topic = `${this.mqtt_name}/2/get`
+      this.attributes.receive_status_topic =
+        devDataAttr.receive_status_topic || `${this.mqtt_name}/1/get`
+      this.attributes.receive_batt_topic =
+        devDataAttr.receive_batt_topic || `${this.mqtt_name}/2/get`
     }
   }
   initDevice() {
     this.subscribeForDeviceInfo()
-    this.subscribeToTopic(this.receive_status_topic)
+    this.subscribeToTopic(this.attributes.receive_status_topic)
     this.getDeviceInfo()
     this.getInitialState()
   }
   getInitialState() {
     if (this.manufacter == 'tasmota') {
-      if (!this.status) this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
+      if (!this.attributes.status)
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/POWER`, '')
       //TODO for battery
     }
     if (this.manufacter == 'openBeken') {
-      if (!this.status) this.sendMqttReq(this.receive_status_topic, '')
-      if (!this.battery_level) this.sendMqttReq(this.receive_batt_topic, '')
+      if (!this.attributes.status)
+        this.sendMqttReq(this.attributes.receive_status_topic, '')
+      if (!this.attributes.battery_level)
+        this.sendMqttReq(this.attributes.receive_batt_topic, '')
     }
   }
   sendToggleReq() {
@@ -39,15 +46,15 @@ class SmartDoorSensor extends Device {
   }
   processIncomingMessage(topic, payload, io) {
     this.processDeviceInfoMessage(topic, payload)
-    let value = payload.toString()
-    if (topic === this.receive_status_topic) {
+    const value = payload.toString()
+    if (topic === this.attributes.receive_status_topic) {
       if (value == 'ON' || value == '1') {
-        this.status = 'Opened'
+        this.attributes.status = 'Opened'
       } else if (value == 'OFF' || value == '0') {
-        this.status = 'Closed'
+        this.attributes.status = 'Closed'
       }
-    } else if (topic === this.receive_batt_topic) {
-      this.battery_level = Number(value)
+    } else if (topic === this.attributes.receive_batt_topic) {
+      this.attributes.battery_level = Number(value)
     }
     this.sendWithSocket(io)
   }

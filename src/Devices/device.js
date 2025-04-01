@@ -9,6 +9,7 @@ class Device {
     group_name,
     group_id,
     device_type,
+    sub_type,
     favorite,
     is_deleted,
     createdAt,
@@ -39,6 +40,7 @@ class Device {
     this.group_id = group_id
     this.group_name = group_name
     this.device_type = device_type
+    this.sub_type = sub_type
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
     this.createdAt = createdAt
