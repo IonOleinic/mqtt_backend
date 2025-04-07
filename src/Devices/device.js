@@ -14,6 +14,7 @@ class Device {
     is_deleted,
     createdAt,
     updatedAt,
+    attributes,
   }) {
     this.user_id = user_id
     this.favorite = favorite
@@ -29,6 +30,8 @@ class Device {
     ].includes(device_type)
       ? true
       : false
+    //todo receive battery topic
+    //add batery field in database
     this.read_only = [
       'smartTempSensor',
       'smartDoorSensor',
@@ -46,6 +49,7 @@ class Device {
     this.createdAt = createdAt
     this.updatedAt = updatedAt
     this.available = false
+    this.attributes = attributes || {}
   }
   subscribeForDeviceInfo() {
     this.info_topics = []
