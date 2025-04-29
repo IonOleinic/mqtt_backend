@@ -16,11 +16,9 @@ class DeviceController {
       )
       if (sameMqttNameDevice || sameNameDevice) {
         if (sameNameDevice) {
-          res
-            .status(409)
-            .json({
-              msg: 'A device with same name or MQTT Name already exists!',
-            })
+          res.status(409).json({
+            msg: 'A device with same name or MQTT Name already exists!',
+          })
         } else {
           if (deviceData.device_type === 'smartIR') {
             await DeviceService.insertDevice(deviceData)
@@ -65,8 +63,7 @@ class DeviceController {
         JSON.parse(req.query['filter'] || '{}'),
         req.query['order']
       )
-      devices = devices.map((device) => mapDeviceToViewModel(device))
-      res.json(devices)
+      res.json(devices.map((device) => mapDeviceToViewModel(device)))
     } catch (error) {
       console.log(error)
       res.status(500).json({ msg: 'Server error!' })

@@ -8,11 +8,7 @@ class SceneController {
         JSON.parse(req.query['filter'] || '{}'),
         req.query['order']
       )
-      res.json(
-        scenes.map((scene) => {
-          return mapSceneToViewModel(scene)
-        })
-      )
+      res.json(scenes.map((scene) => mapSceneToViewModel(scene)))
     } catch (error) {
       console.log(error)
       res.status(500).json({ msg: 'Server error!' })

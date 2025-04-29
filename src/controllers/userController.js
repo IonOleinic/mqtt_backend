@@ -5,11 +5,7 @@ class UserController {
   async getUsers(req, res) {
     try {
       let users = await UserService.getUsers()
-      res.json(
-        users.map((user) => {
-          mapUserToViewModel(user)
-        })
-      )
+      res.json(users.map((user) => mapUserToViewModel(user)))
     } catch (error) {
       console.log(error)
       res.status(500).json({ msg: 'Server error!' })
