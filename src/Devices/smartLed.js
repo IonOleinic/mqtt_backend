@@ -79,27 +79,29 @@ class SmartLed extends Device {
     // this.sendChangeScheme(0)
   }
   sendChangeColor(color) {
-    if (this.attributes.speed != 1) {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, '1')
-    }
     if (this.manufacter == 'tasmota') {
+      if (this.attributes.speed != 1) {
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, '1')
+      }
       this.sendMqttReq(`cmnd/${this.mqtt_name}/Color`, color)
+      setTimeout(() => {
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.attributes.speed)
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/Scheme`, '')
+      }, 10)
     } else if (this.manufacter == 'openBeken') {
       this.sendMqttReq(`cmnd/${this.mqtt_name}/led_basecolor_rgbcw`, color)
     }
-    setTimeout(() => {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.attributes.speed)
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Scheme`, '')
-    }, 10)
   }
   sendChangeDimmer(dimmer) {
-    if (this.attributes.speed != 1) {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, '1')
+    if (this.manufacter == 'tasmota') {
+      if (this.attributes.speed != 1) {
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, '1')
+      }
+      setTimeout(() => {
+        this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.attributes.speed)
+      }, 10)
     }
     this.sendMqttReq(`cmnd/${this.mqtt_name}/Dimmer`, dimmer)
-    setTimeout(() => {
-      this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, this.attributes.speed)
-    }, 10)
   }
   sendChangeSpeed(speed) {
     this.sendMqttReq(`cmnd/${this.mqtt_name}/Speed`, speed)

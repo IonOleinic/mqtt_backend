@@ -9,13 +9,12 @@ class SmartSirenAlarm extends Device {
     this.attributes.sound_duration = devDataAttr.sound_duration || 10
     this.attributes.nr_of_ringtones = devDataAttr.nr_of_ringtones || 10
     this.attributes.temp_hum_sensor = devDataAttr.temp_hum_sensor
-    this.attributes.volume_mapper = devDataAttr.volume_mapper || {
-      low: -1,
-      medium: -1,
-      high: -1,
-      mute: -1,
-    }
-
+    this.attributes.volume_mapper = devDataAttr.volume_mapper || [
+      { name: 'low', value: -1 },
+      { name: 'medium', value: -1 },
+      { name: 'high', value: -1 },
+      { name: 'mute', value: -1 },
+    ]
     if (this.attributes.temp_hum_sensor == true) {
       this.attributes.temperature = devDataAttr.temperature || 0
       this.attributes.humidity = devDataAttr.humidity || 0
