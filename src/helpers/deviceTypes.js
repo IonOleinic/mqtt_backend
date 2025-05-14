@@ -1,5 +1,5 @@
 const DeviceTypes = {
-  'Smart Switch': 'smartStrip',
+  'Smart Switch': 'smartSwitch',
   'Smart IR': 'smartIR',
   'Smart Door Sensor': 'smartDoorSensor',
   'Smart Temp&Hum Sensor': 'smartTempSensor',

@@ -1,12 +1,12 @@
 const { Device } = require('../../models')
 const SmartLed = require('../devices/smartLed.js')
 const SmartMotionSensor = require('../devices/smartMotionSensor.js')
-const SmartStrip = require('../devices/smartStrip.js')
 const SmartIR = require('../devices/smartIR.js')
 const SmartTempSensor = require('../devices/smartTempSensor.js')
 const SmartDoorSensor = require('../devices/smartDoorSensor.js')
 const SmartSirenAlarm = require('../devices/smartSirenAlarm.js')
 const { GroupService } = require('../services/groupService.js')
+const SmartSwitch = require('../Devices/smartSwitch.js')
 
 class DeviceCache {
   static devices = new Map()
@@ -240,11 +240,8 @@ class DeviceCache {
         (await GroupService.getGroupById(deviceData.group_id))?.name || ''
     }
     switch (deviceData.device_type) {
-      case 'smartPlug':
       case 'smartSwitch':
-      case 'smartStrip':
-      case 'smartValve':
-        device = new SmartStrip(deviceData)
+        device = new SmartSwitch(deviceData)
         break
       case 'smartIR':
         this.tempDevices.clear()

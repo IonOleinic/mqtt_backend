@@ -1,8 +1,8 @@
 const Device = require('./device')
 
-class SmartStrip extends Device {
+class SmartSwitch extends Device {
   constructor(deviceData) {
-    deviceData.device_type = 'smartStrip'
+    deviceData.device_type = 'smartSwitch'
     super(deviceData)
     const devDataAttr = deviceData.attributes || {}
     this.attributes = devDataAttr
@@ -129,7 +129,7 @@ class SmartStrip extends Device {
     this.stopSensorUpdateInterval()
   }
   destroy() {
-    console.log('\ndestroy smart strip ' + this.name + '\n')
+    console.log('\ndestroy smart switch ' + this.name + '\n')
     this.clearIntervals()
   }
 
@@ -185,4 +185,4 @@ class SmartStrip extends Device {
     this.sendWithSocket(io)
   }
 }
-module.exports = SmartStrip
+module.exports = SmartSwitch

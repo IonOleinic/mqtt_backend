@@ -10,6 +10,7 @@ class Device {
     group_id,
     device_type,
     sub_type,
+    connection_type,
     favorite,
     is_deleted,
     createdAt,
@@ -44,6 +45,7 @@ class Device {
     this.group_name = group_name
     this.device_type = device_type
     this.sub_type = sub_type
+    this.connection_type = connection_type
     this.MAC = 'UNKNOWN'
     this.IP = 'UNKNOWN'
     this.createdAt = createdAt

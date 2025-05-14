@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
     sub_type: {
       type: DataTypes.STRING,
     },
+    connection_type: {
+      type: DataTypes.STRING,
+      defaultValue: 'wifi',
+    },
     favorite: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
