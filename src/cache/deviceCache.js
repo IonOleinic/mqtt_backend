@@ -1,12 +1,13 @@
 const { Device } = require('../../models')
+const { GroupService } = require('../services/groupService.js')
 const SmartLed = require('../devices/smartLed.js')
 const SmartMotionSensor = require('../devices/smartMotionSensor.js')
 const SmartIR = require('../devices/smartIR.js')
 const SmartTempSensor = require('../devices/smartTempSensor.js')
 const SmartDoorSensor = require('../devices/smartDoorSensor.js')
 const SmartSirenAlarm = require('../devices/smartSirenAlarm.js')
-const { GroupService } = require('../services/groupService.js')
 const SmartSwitch = require('../Devices/smartSwitch.js')
+const ZbHub = require('../Devices/zbHub.js')
 
 class DeviceCache {
   static devices = new Map()
@@ -132,7 +133,7 @@ class DeviceCache {
     let deviceDB = undefined
     try {
       deviceDB = await Device.create(deviceData)
-      let device = await this.buildDeviceObj(deviceDB.dataValues)
+      const device = await this.buildDeviceObj(deviceDB.dataValues)
       this.devices.set(deviceDB.id, device)
       return device
     } catch (error) {
@@ -147,6 +148,9 @@ class DeviceCache {
       if (deviceDB) {
         await deviceDB.update(deviceData)
         device = this.devices.get(deviceId)
+        if (device.name != deviceData.name) {
+          if (device.zbChangeName) device.zbChangeName(deviceData.name)
+        }
         this.updateDeviceLocaly(device, deviceData)
         this.devices.set(deviceId, device)
       }
@@ -261,6 +265,9 @@ class DeviceCache {
         break
       case 'smartSirenAlarm':
         device = new SmartSirenAlarm(deviceData)
+        break
+      case 'zbHub':
+        device = new ZbHub(deviceData)
         break
       default:
         break

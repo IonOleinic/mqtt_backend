@@ -29,7 +29,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     connection_type: {
       type: DataTypes.STRING,
-      defaultValue: 'wifi',
     },
     favorite: {
       type: DataTypes.BOOLEAN,

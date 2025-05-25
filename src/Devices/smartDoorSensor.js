@@ -19,9 +19,7 @@ class SmartDoorSensor extends Device {
     }
   }
   initDevice() {
-    this.subscribeForDeviceInfo()
     this.subscribeToTopic(this.attributes.receive_status_topic)
-    this.getDeviceInfo()
     this.getInitialState()
   }
   getInitialState() {

@@ -49,14 +49,12 @@ class SmartLed extends Device {
   }
 
   initDevice() {
-    this.subscribeForDeviceInfo()
     this.subscribeToTopic(this.attributes.receive_result_topic)
     this.subscribeToTopic(this.attributes.receive_status_topic)
     this.subscribeToTopic(this.attributes.receive_dimmer_topic)
     if (this.attributes.led_type?.includes('rgb')) {
       this.subscribeToTopic(this.attributes.receive_color_topic)
     }
-    this.getDeviceInfo()
     this.setLastState()
   }
 

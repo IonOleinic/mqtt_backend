@@ -19,11 +19,9 @@ class SmartTempSensor extends Device {
     }
   }
   initDevice() {
-    this.subscribeForDeviceInfo()
     this.subscribeToTopic(this.attributes.receive_temp_topic)
     this.subscribeToTopic(this.attributes.receive_hum_topic)
     this.subscribeToTopic(this.attributes.receive_batt_topic)
-    this.getDeviceInfo()
     this.getInitialState()
   }
   getInitialState() {

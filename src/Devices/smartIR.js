@@ -46,10 +46,12 @@ class SmartIR extends Device {
       const value = payload.toString()
       if (topic == this.attributes.original_receive_topic) {
         const newPayload = JSON.parse(value)?.IrReceived
-        this.sendMqttReq(
-          this.attributes.receive_topic,
-          JSON.stringify(newPayload)
-        )
+        if (newPayload) {
+          this.sendMqttReq(
+            this.attributes.receive_topic,
+            JSON.stringify(newPayload)
+          )
+        }
       }
     }
     this.sendWithSocket(io)

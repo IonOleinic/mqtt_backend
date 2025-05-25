@@ -47,7 +47,6 @@ class SmartSirenAlarm extends Device {
     }
   }
   initDevice() {
-    this.subscribeForDeviceInfo()
     this.subscribeToTopic(this.attributes.receive_status_topic)
     this.subscribeToTopic(this.attributes.receive_ringtone_topic)
     this.subscribeToTopic(this.attributes.receive_volume_topic)
@@ -56,7 +55,6 @@ class SmartSirenAlarm extends Device {
       this.subscribeToTopic(this.attributes.receive_temp_topic)
       this.subscribeToTopic(this.attributes.receive_hum_topic)
     }
-    this.getDeviceInfo()
     this.getInitialState()
     // this.setLastState()
   }

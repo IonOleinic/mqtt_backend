@@ -6,6 +6,7 @@ const DeviceTypes = {
   'Smart Motion Sensor': 'smartMotionSensor',
   'Smart Siren Alarm': 'smartSirenAlarm',
   'Smart LED': 'smartLed',
+  'Zigbee Hub': 'zbHub',
 }
 
 module.exports = { DeviceTypes }
