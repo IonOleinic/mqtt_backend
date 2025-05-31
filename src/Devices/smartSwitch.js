@@ -77,6 +77,7 @@ class SmartSwitch extends Device {
   initDevice() {
     if (this.connection_type === 'zigbee') {
       for (let i = 0; i < this.attributes.receive_power_topics?.length; i++) {
+        this.subscribeToTopic(this.attributes?.cmnd_power_topics[i])
         this.subscribeToTopic(this.attributes?.receive_power_topics[i])
       }
     } else if (this.connection_type === 'wifi') {
@@ -138,18 +139,6 @@ class SmartSwitch extends Device {
         )
     }
   }
-  sendHeartbeatReq() {
-    if (this.available) {
-      this.sendMqttReq(
-        `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbPing`,
-        this.attributes.short_addr
-      )
-      this.sendMqttReq(
-        `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbInfo`,
-        this.attributes.short_addr
-      )
-    }
-  }
   startSensorUpdateInterval() {
     clearInterval(this.sensor_update_interval_id)
     this.sensor_update_interval_id = setInterval(() => {
@@ -157,7 +146,7 @@ class SmartSwitch extends Device {
         this.sensorUpdateReq()
         console.log('\nsensor update ' + this.name + '\n')
       }
-    }, 10000)
+    }, 5000)
   }
   stopSensorUpdateInterval() {
     clearInterval(this.sensor_update_interval_id)
@@ -175,7 +164,6 @@ class SmartSwitch extends Device {
     this.processDeviceInfoMessage(topic, payload)
     let value = payload.toString()
     if (this.connection_type === 'zigbee') {
-      //TODO
       if (topic === this.attributes.receive_result_topic) {
         const deviceResult = JSON.parse(value)
         if (deviceResult?.Power !== undefined) {
@@ -186,10 +174,21 @@ class SmartSwitch extends Device {
           else if (power == 'OFF' || power == '0')
             this.attributes.power_status[0] = 'OFF'
           if (oldPowerStatus !== this.attributes.power_status[0]) {
+            // resend power state to [stat/mqtt_name/POWER] topic (for scenes)
             this.sendMqttReq(
               this.attributes.receive_power_topics[0],
               this.attributes.power_status[0]
             )
+          }
+        }
+      } else {
+        // intercept power state change from zigbee (for scenes)
+        for (let i = 0; i < this.attributes.cmnd_power_topics?.length; i++) {
+          if (topic === this.attributes.cmnd_power_topics[i]) {
+            if (value == 'ON' || value == '1')
+              this.changePowerState(i + 1, 'ON')
+            else if (value == 'OFF' || value == '0')
+              this.changePowerState(i + 1, 'OFF')
           }
         }
       }

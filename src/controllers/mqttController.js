@@ -23,6 +23,7 @@ class MqttController {
   onMessage = async (topic, payload) => {
     let buffer = topic.split('/')
     payload = payload.toString()
+
     let currentDevice = undefined
     if (buffer[0] === 'stat' || buffer[0] === 'tele') {
       currentDevice = await DeviceService.getTempDeviceByMqttName(buffer[1])
@@ -30,7 +31,11 @@ class MqttController {
       currentDevice = await DeviceService.getTempDeviceByMqttName(buffer[0])
     }
     if (!currentDevice) {
-      if (buffer[0] === 'stat' || buffer[0] === 'tele') {
+      if (
+        buffer[0] === 'stat' ||
+        buffer[0] === 'tele' ||
+        buffer[0] === 'cmnd'
+      ) {
         currentDevice = await DeviceService.getDeviceByMqttName(buffer[1])
       } else {
         currentDevice = await DeviceService.getDeviceByMqttName(buffer[0])

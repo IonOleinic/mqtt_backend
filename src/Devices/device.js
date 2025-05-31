@@ -54,7 +54,7 @@ class Device {
     this.attributes = attributes || {}
     if (this.connection_type === 'zigbee') {
       this.attributes.zb_hub_mqtt_name =
-        attributes.zb_hub_mqtt_name || 'tm_zb_hub1'
+        attributes.zb_hub_mqtt_name || 'UNKNOWN'
       this.attributes.short_addr = attributes.short_addr || ''
       this.attributes.cmnd_topic = `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbSend`
       this.attributes.receive_result_topic = `stat/${this.mqtt_name}/RESULT`
@@ -92,17 +92,21 @@ class Device {
       })
   }
   getDeviceInfo() {
-    if (this.device_type == 'zbHub') {
+    if (this.device_type === 'zbHub') {
       this.sendMqttReq(`cmnd/${this.mqtt_name}/ZbInfo`, '')
     }
-    if (this.connection_type == 'zigbee') {
+    if (this.connection_type === 'zigbee') {
+      this.sendMqttReq(
+        `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbInfo`,
+        this.attributes.short_addr
+      )
       this.zbChangeName(this.name)
-    } else if (this.connection_type == 'wifi') {
+    } else if (this.connection_type === 'wifi') {
       if (this.manufacter == 'tasmota') {
         this.sendMqttReq(`cmnd/${this.mqtt_name}/STATUS`, '5')
       } else if (this.manufacter == 'openBeken') {
         this.sendMqttReq(`${this.mqtt_name}/ip/get`, '')
-        // this.sendMqttReq(`${this.mqtt_name}/mac/get`, '')  //the mac is sended only on boot --this is an issue that it cant be interogated
+        // this.sendMqttReq(`${this.mqtt_name}/mac/get`, '')  //the mac is sended only on boot --this is an issue that it can't be interogated
       }
     }
   }
@@ -119,7 +123,7 @@ class Device {
           this.available = deviceResult?.Reachable
         }
       }
-    } else {
+    } else if (this.connection_type === 'wifi') {
       if (topic == this.availability_topic) {
         if (value.toUpperCase() == 'ONLINE') {
           this.available = true
@@ -193,24 +197,22 @@ class Device {
     }
   }
   sendHeartbeatReq() {
-    if (this.available) {
-      this.sendMqttReq(
-        `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbPing`,
-        this.attributes.short_addr
-      )
+    this.sendMqttReq(
+      `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbPing`,
+      this.attributes.short_addr
+    )
+    setTimeout(() => {
       this.sendMqttReq(
         `cmnd/${this.attributes.zb_hub_mqtt_name}/ZbInfo`,
         this.attributes.short_addr
       )
-    }
+    }, 2000)
   }
   startHeartbeatInterval() {
     clearInterval(this.heartbeat_interval_id)
     this.heartbeat_interval_id = setInterval(() => {
-      if (this.available) {
-        this.sendHeartbeatReq()
-        console.log('\nheartbeat (zigbee device) ' + this.name + '\n')
-      }
+      this.sendHeartbeatReq()
+      console.log('\nheartbeat (zigbee device) ' + this.name + '\n')
     }, 60000)
   }
   stopHeartbeatInterval() {

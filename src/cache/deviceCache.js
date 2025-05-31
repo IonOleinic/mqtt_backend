@@ -286,6 +286,7 @@ class DeviceCache {
     oldDevice.is_deleted = newDevice.is_deleted
     oldDevice.manufacter = newDevice.manufacter
     oldDevice.available = newDevice.available
+    oldDevice.attributes = newDevice.attributes
   }
 }
 
