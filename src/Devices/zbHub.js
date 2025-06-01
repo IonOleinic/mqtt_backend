@@ -5,7 +5,7 @@ class ZbHub extends Device {
     super(deviceData)
     const devDataAttr = deviceData.attributes || {}
     this.attributes = devDataAttr
-    this.attributes.connected_devices = []
+    this.attributes.connected_devices = devDataAttr.connected_devices || []
     this.attributes.pairingMode = devDataAttr.pairingMode || false
     if (this.manufacter == 'tasmota') {
       this.attributes.receive_sensor_topic =
@@ -47,7 +47,7 @@ class ZbHub extends Device {
     this.sendMqttReq(`cmnd/${this.mqtt_name}/ZbLeave`, shortAddr)
     setTimeout(() => {
       this.sendMqttReq(`cmnd/${this.mqtt_name}/ZbForget`, shortAddr)
-    }, 2000)
+    }, 3000)
     return this.attributes.connected_devices
   }
   sendChangePairingMode(pairingMode) {

@@ -67,6 +67,7 @@ class DeviceService {
     return await DeviceCache.deleteDevice(Number(deviceId))
   }
   static async destroyDevice(deviceId) {
+    await SceneCache.deleteScenesCascade(Number(deviceId))
     return await DeviceCache.destroyDevice(Number(deviceId))
   }
   static async recoverDevice(deviceId) {

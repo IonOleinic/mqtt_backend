@@ -12,7 +12,7 @@ deviceRoutes.delete('/destroy-device/:id', deviceController.destroyDevice)
 deviceRoutes.delete('/destroy-all-devices', deviceController.destroyAllDevices)
 deviceRoutes.get('/devices', deviceController.getDevices)
 deviceRoutes.get(
-  '/scene-involved-devices',
+  '/devices/scene-involved',
   deviceController.getSceneInvolvedDevices
 )
 deviceRoutes.get('/deleted-devices', deviceController.getDeletedDevices)
