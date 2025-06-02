@@ -146,7 +146,7 @@ class SmartSwitch extends Device {
         this.sensorUpdateReq()
         console.log('\nsensor update ' + this.name + '\n')
       }
-    }, 5000)
+    }, 10000)
   }
   stopSensorUpdateInterval() {
     clearInterval(this.sensor_update_interval_id)
