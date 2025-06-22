@@ -1,6 +1,6 @@
 const { DeviceService } = require('../services/deviceService')
 
-class SmartStripController {
+class SmartSwitchController {
   async changePowerState(req, res) {
     try {
       let currentDevice = await DeviceService.getDeviceById(
@@ -17,4 +17,4 @@ class SmartStripController {
     }
   }
 }
-module.exports = new SmartStripController()
+module.exports = new SmartSwitchController()
